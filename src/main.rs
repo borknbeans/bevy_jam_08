@@ -26,6 +26,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     sprites::ConfigurableSprite::new(asset_server.load("art/potion.png"))
         .with_hover_image(asset_server.load("art/potion_hover.png"))
         .with_press_image(asset_server.load("art/potion_pressed.png"))
+        .with_bounce_sound(asset_server.load("audio/glass-clink.ogg"))
+        .with_press_sound(asset_server.load("audio/cork-pop.ogg"))
         .draggable()
         .apply_physics()
         .spawn(commands);

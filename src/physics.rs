@@ -1,11 +1,11 @@
 use bevy::{
-    asset::Assets, camera::Camera, ecs::{
-        component::Component,
-        system::{Query, Res},
+    asset::{Assets, Handle}, audio::{AudioPlayer, AudioSource, PlaybackSettings}, camera::Camera, ecs::{
+        component::Component, system::{Commands, Query, Res},
     }, image::Image, math::{Vec2, Vec3, ops::abs}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
 };
+use rand::RngExt;
 
-use crate::sprites::DragState;
+const BOUNCE_AUDIO_THRESHOLD: f32 = 8.0;
 
 #[derive(Component)]
 pub struct PhysicsState {
@@ -14,6 +14,7 @@ pub struct PhysicsState {
     velocity: Vec2,
     bounce_factor: f32,
     roughness_factor: f32,
+    bounce_sound_fx: Option<Handle<AudioSource>>,
 }
 
 impl PhysicsState {
@@ -24,6 +25,7 @@ impl PhysicsState {
             velocity: Vec2::new(0.0, 0.0),
             bounce_factor: 0.15,
             roughness_factor: 0.35,
+            bounce_sound_fx: None,
         }
     }
 
@@ -44,9 +46,14 @@ impl PhysicsState {
         self.velocity.x = v.x;
         self.velocity.y = v.y;
     } 
+
+    pub fn set_bounce_fx(&mut self, sound_fx: Handle<AudioSource>) {
+        self.bounce_sound_fx = Some(sound_fx);
+    }
 }
 
 pub fn update_physics_sprites(
+    mut commands: Commands,
     time: Res<Time>,
     cameras: Query<(&Camera, &GlobalTransform)>,
     images: Res<Assets<Image>>,
@@ -90,10 +97,14 @@ pub fn update_physics_sprites(
                 transform.translation.x += physics_state.velocity.x * time.delta_secs();
                 transform.translation.y += physics_state.velocity.y * time.delta_secs();
 
+                let mut bounced: bool = false;
                 if transform.translation.x < left {
                     transform.translation.x = left;
                     if physics_state.velocity.x < 0.0 {
                         physics_state.velocity.x = physics_state.velocity.x * physics_state.bounce_factor * -1.0;
+                        if physics_state.velocity.x > BOUNCE_AUDIO_THRESHOLD {
+                            bounced = true;
+                        }
                     }
                 }
 
@@ -101,6 +112,9 @@ pub fn update_physics_sprites(
                     transform.translation.x = right;
                     if physics_state.velocity.x > 0.0 {
                         physics_state.velocity.x = physics_state.velocity.x * physics_state.bounce_factor * -1.0;
+                        if physics_state.velocity.x < -BOUNCE_AUDIO_THRESHOLD {
+                            bounced = true;
+                        }
                     }
                 }
 
@@ -108,6 +122,9 @@ pub fn update_physics_sprites(
                     transform.translation.y = bottom;
                     if physics_state.velocity.y < 0.0 {
                         physics_state.velocity.y = physics_state.velocity.y * physics_state.bounce_factor * -1.0;
+                        if physics_state.velocity.y > BOUNCE_AUDIO_THRESHOLD {
+                            bounced = true;
+                        }
                     }
 
                     // apply friction
@@ -125,6 +142,19 @@ pub fn update_physics_sprites(
                     transform.translation.y = top;
                     if physics_state.velocity.y > 0.0 {
                         physics_state.velocity.y = physics_state.velocity.y * physics_state.bounce_factor * -1.0;
+                        if physics_state.velocity.y < -BOUNCE_AUDIO_THRESHOLD {
+                            bounced = true;
+                        }
+                    }
+                }
+
+                if bounced {
+                    if let Some(bounce_sound_fx) = physics_state.bounce_sound_fx.clone() {
+                        let speed = rand::rng().random_range(0.9..=1.1);
+                        commands.spawn((
+                            AudioPlayer::new(bounce_sound_fx.clone()),
+                            PlaybackSettings::DESPAWN.with_speed(speed),
+                        ));
                     }
                 }
             }

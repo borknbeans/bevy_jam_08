@@ -1,11 +1,12 @@
 use bevy::{
-    asset::Handle, camera::Camera, ecs::{
+    asset::Handle, audio::{AudioPlayer, AudioSource, PlaybackSettings}, camera::Camera, ecs::{
         component::Component, observer::On, query::With, system::{Commands, Query, Res},
     }, image::Image, math::Vec3, picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress, PointerRelease},
     }, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window},
 };
+use rand::RngExt;
 
 use crate::physics::{self, PhysicsState};
 
@@ -13,6 +14,9 @@ pub struct ConfigurableSprite {
     default_image: Handle<Image>,
     hover_image: Option<Handle<Image>>,
     press_image: Option<Handle<Image>>,
+    hover_sound_fx: Option<Handle<AudioSource>>,
+    press_sound_fx: Option<Handle<AudioSource>>,
+    bounce_sound_fx: Option<Handle<AudioSource>>,
     draggable: bool,
     apply_physics: bool,
 }
@@ -23,6 +27,9 @@ impl ConfigurableSprite {
             default_image,
             hover_image: None,
             press_image: None,
+            hover_sound_fx: None,
+            press_sound_fx: None,
+            bounce_sound_fx: None,
             draggable: false,
             apply_physics: false,
         }
@@ -37,6 +44,24 @@ impl ConfigurableSprite {
     // set a new image when pressed
     pub fn with_press_image(mut self, image: Handle<Image>) -> Self {
         self.press_image = Some(image);
+        self
+    }
+
+    // set hover sound effect
+    pub fn with_hover_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
+        self.hover_sound_fx = Some(sound_fx);
+        self
+    }
+
+    // set press sound effect
+    pub fn with_press_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
+        self.press_sound_fx = Some(sound_fx);
+        self
+    }
+
+    // set bounce sound effect
+    pub fn with_bounce_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
+        self.bounce_sound_fx = Some(sound_fx);
         self
     }
 
@@ -90,6 +115,20 @@ impl ConfigurableSprite {
             );
         }
 
+        // optionally configure audio playback for hovering 
+        if let Some(hover_sound_fx) = self.hover_sound_fx {
+            entity.observe(
+                move |_: On<PointerOver>, mut commands: Commands| {
+                    let speed = rand::rng().random_range(0.9..=1.1);
+
+                    commands.spawn((
+                        AudioPlayer::new(hover_sound_fx.clone()),
+                        PlaybackSettings::DESPAWN.with_speed(speed),
+                    ));
+                }
+            );
+        }
+
         // optionally configure picking setup for pressing/releasing
         if let Some(press_image) = self.press_image {
             let default_image = self.default_image.clone();
@@ -109,6 +148,21 @@ impl ConfigurableSprite {
                 },
             );
         }
+
+        // optionally configure audio playback for pressing
+        if let Some(press_sound_fx) = self.press_sound_fx {
+            entity.observe(
+                move |_: On<PointerPress>, mut commands: Commands| {
+                    let speed = rand::rng().random_range(0.9..=1.1);
+
+                    commands.spawn((
+                        AudioPlayer::new(press_sound_fx.clone()),
+                        PlaybackSettings::DESPAWN.with_speed(speed),
+                    ));
+                }
+            );
+        }
+
 
         // optionally configure the sprite being draggable
         if self.draggable {
@@ -141,7 +195,11 @@ impl ConfigurableSprite {
 
         // optionally enable physics on sprite (gravity and velocity)
         if self.apply_physics {
-            entity.insert(physics::PhysicsState::new());
+            let mut physics_state = PhysicsState::new();
+            if let Some(bounce_sound_fx) = self.bounce_sound_fx {
+                physics_state.set_bounce_fx(bounce_sound_fx);
+            }
+            entity.insert(physics_state);
         }
     }
 }
