@@ -11,7 +11,13 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, setup)
-        .add_systems(Update, (sprites::update_dragged_sprites, physics::update_physics_sprites))
+        .add_systems(
+            Update,
+            (
+                sprites::update_dragged_sprites,
+                physics::update_physics_sprites,
+            ),
+        )
         .run();
 }
 

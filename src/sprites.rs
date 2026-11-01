@@ -116,16 +116,25 @@ impl ConfigurableSprite {
             entity.insert(DragState::default());
 
             entity.observe(
-                |event: On<PointerPress>, mut drag_states: Query<&mut DragState>| {
+                |event: On<PointerPress>, mut drag_states: Query<&mut DragState>, mut physics_states: Query<&mut physics::PhysicsState>| {
                     if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
                         drag_state.dragging = true;
+                    }
+
+                    if let Ok(mut physics_state) = physics_states.get_mut(event.entity) {
+                        physics_state.disable();
+                        physics_state.clear_velocity();
                     }
                 },
             );
             entity.observe(
-                |event: On<PointerRelease>, mut drag_states: Query<&mut DragState>| {
+                |event: On<PointerRelease>, mut drag_states: Query<&mut DragState>, mut physics_states: Query<&mut physics::PhysicsState>| {
                     if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
                         drag_state.dragging = false;
+                    }
+
+                    if let Ok(mut physics_state) = physics_states.get_mut(event.entity) {
+                        physics_state.enable();
                     }
                 },
             );
@@ -133,7 +142,7 @@ impl ConfigurableSprite {
 
         // optionally enable physics on sprite (gravity and velocity)
         if self.apply_physics {
-            entity.insert(physics::PhysicsState::new().enable());
+            entity.insert(physics::PhysicsState::new());
         }
     }
 }
