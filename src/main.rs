@@ -1,6 +1,8 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 
+mod audio;
+mod drag;
 mod physics;
 mod sprites;
 
@@ -14,11 +16,13 @@ fn main() {
         .add_systems(
             Update,
             (
-                sprites::update_dragged_sprites,
-                sprites::stop_dragging_on_mouse_release,
+                audio::process_audio_requests,
+                drag::update_dragged_sprites,
+                drag::stop_dragging_on_mouse_release,
                 physics::update_physics_sprites,
             ),
         )
+        .insert_resource(audio::AudioFactory::default())
         .run();
 }
 
