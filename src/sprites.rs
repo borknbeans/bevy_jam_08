@@ -17,16 +17,19 @@ impl ConfigurableSprite {
         }
     }
 
+    // set a new image when hovered
     pub fn with_hover_image(mut self, image: Handle<Image>) -> Self {
         self.hover_image = Some(image);
         self
     }
 
+    // set a new image when pressed
     pub fn with_press_image(mut self, image: Handle<Image>) -> Self {
         self.press_image = Some(image);
         self
     }
 
+    // enable dragging with the cursor
     pub fn draggable(mut self) -> Self {
         self.draggable = true;
         self
@@ -73,6 +76,7 @@ impl ConfigurableSprite {
             });
         }
 
+        // optionally configure the sprite being draggable
         if self.draggable {
             entity.insert(DragState::default());
 
@@ -96,6 +100,9 @@ pub struct DragState {
     dragging: bool,
 }
 
+
+// looks for entities with a drag state component and if dragging is enabled then
+// have it follow the cursor
 pub fn update_dragged_sprites(
     windows: Query<&Window, With<PrimaryWindow>>,
     cameras: Query<(&Camera, &GlobalTransform)>,
