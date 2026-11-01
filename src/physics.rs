@@ -1,12 +1,8 @@
 use bevy::{
-    camera::Camera,
-    ecs::{
+    asset::Assets, camera::Camera, ecs::{
         component::Component,
         system::{Query, Res},
-    },
-    math::Vec2,
-    time::Time,
-    transform::components::{GlobalTransform, Transform},
+    }, image::Image, math::Vec2, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
 };
 
 #[derive(Component)]
@@ -42,7 +38,8 @@ impl PhysicsState {
 pub fn update_physics_sprites(
     time: Res<Time>,
     cameras: Query<(&Camera, &GlobalTransform)>,
-    mut sprites: Query<(&mut PhysicsState, &mut Transform)>,
+    images: Res<Assets<Image>>,
+    mut sprites: Query<(&Sprite, &mut PhysicsState, &mut Transform)>,
 ) {
     let Ok((camera, camera_transform)) = cameras.single() else {
         return;
@@ -61,36 +58,49 @@ pub fn update_physics_sprites(
             return;
         };
 
-        for (mut physics_state, mut transform) in &mut sprites {
+        for (sprite, mut physics_state, mut transform) in &mut sprites {
             if physics_state.enabled {
+                let sprite_size = sprite.custom_size.or_else(|| images.get(&sprite.image).map(|image| image.size_f32()));
+
+                let Some(size) = sprite_size else {
+                    continue; // image not loaded in yet
+                };
+
+                let half_size = size * transform.scale.truncate().abs() * 0.5;
+
+                let left = tl.x + half_size.x;
+                let right = br.x - half_size.x;
+                let top = tl.y - half_size.y;
+                let bottom = br.y + half_size.y;
+
                 physics_state.velocity.y -= physics_state.gravity * time.delta_secs();
 
                 transform.translation.x += physics_state.velocity.x * time.delta_secs();
                 transform.translation.y += physics_state.velocity.y * time.delta_secs();
 
-                if transform.translation.x < tl.x {
-                    transform.translation.x = tl.x;
+                if transform.translation.x < left {
+                    transform.translation.x = left;
                     if physics_state.velocity.x < 0.0 {
                         physics_state.velocity.x = 0.0;
                     }
                 }
 
-                if transform.translation.x > br.x {
-                    transform.translation.x = br.x;
+                if transform.translation.x > right {
+                    transform.translation.x = right;
                     if physics_state.velocity.x > 0.0 {
                         physics_state.velocity.x = 0.0;
                     }
                 }
 
-                if transform.translation.y < br.y {
-                    transform.translation.y = br.y;
+                if transform.translation.y < bottom {
+                    transform.translation.y = bottom;
                     if physics_state.velocity.y < 0.0 {
                         physics_state.velocity.y = 0.0;
                     }
                 }
 
-                if transform.translation.y > tl.y {
-                    transform.translation.y = tl.y;
+                if transform.translation.y > top {
+                    transform.translation.y = top;
                     if physics_state.velocity.y > 0.0 {
                         physics_state.velocity.y = 0.0;
                     }

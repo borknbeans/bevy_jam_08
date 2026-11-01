@@ -76,15 +76,25 @@ impl ConfigurableSprite {
             let default_image = self.default_image.clone();
 
             entity.observe(
-                move |event: On<PointerOver>, mut sprites: Query<&mut Sprite>| {
+                move |event: On<PointerOver>, mut sprites: Query<&mut Sprite>, mut drag_states: Query<&mut DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        if let Ok(drag_state) = drag_states.get_mut(event.entity) {
+                            if drag_state.dragging {
+                                return;
+                            }
+                        }
                         sprite.image = hover_image.clone();
                     }
                 },
             );
             entity.observe(
-                move |event: On<PointerOut>, mut sprites: Query<&mut Sprite>| {
+                move |event: On<PointerOut>, mut sprites: Query<&mut Sprite>, mut drag_states: Query<&mut DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        if let Ok(drag_state) = drag_states.get_mut(event.entity) {
+                            if drag_state.dragging {
+                                return;
+                            }
+                        }
                         sprite.image = default_image.clone();
                     }
                 },
