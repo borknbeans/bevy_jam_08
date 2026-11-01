@@ -1,7 +1,16 @@
 use bevy::{
-    asset::{Assets, Handle}, audio::{AudioPlayer, AudioSource, PlaybackSettings}, camera::Camera, ecs::{
-        component::Component, system::{Commands, Query, Res},
-    }, image::Image, math::{Vec2, Vec3, ops::abs}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
+    asset::{Assets, Handle},
+    audio::{AudioPlayer, AudioSource, PlaybackSettings},
+    camera::Camera,
+    ecs::{
+        component::Component,
+        system::{Commands, Query, Res},
+    },
+    image::Image,
+    math::{Vec2, Vec3, ops::abs},
+    sprite::Sprite,
+    time::Time,
+    transform::components::{GlobalTransform, Transform},
 };
 use rand::RngExt;
 
@@ -45,7 +54,7 @@ impl PhysicsState {
     pub fn set_velocity(&mut self, v: Vec3) {
         self.velocity.x = v.x;
         self.velocity.y = v.y;
-    } 
+    }
 
     pub fn set_bounce_fx(&mut self, sound_fx: Handle<AudioSource>) {
         self.bounce_sound_fx = Some(sound_fx);
@@ -77,9 +86,10 @@ pub fn update_physics_sprites(
         };
 
         for (sprite, mut physics_state, mut transform) in &mut sprites {
-
             if physics_state.enabled {
-                let sprite_size = sprite.custom_size.or_else(|| images.get(&sprite.image).map(|image| image.size_f32()));
+                let sprite_size = sprite
+                    .custom_size
+                    .or_else(|| images.get(&sprite.image).map(|image| image.size_f32()));
 
                 let Some(size) = sprite_size else {
                     continue; // image not loaded in yet
@@ -101,7 +111,8 @@ pub fn update_physics_sprites(
                 if transform.translation.x < left {
                     transform.translation.x = left;
                     if physics_state.velocity.x < 0.0 {
-                        physics_state.velocity.x = physics_state.velocity.x * physics_state.bounce_factor * -1.0;
+                        physics_state.velocity.x =
+                            -(physics_state.velocity.x * physics_state.bounce_factor);
                         if physics_state.velocity.x > BOUNCE_AUDIO_THRESHOLD {
                             bounced = true;
                         }
@@ -111,7 +122,8 @@ pub fn update_physics_sprites(
                 if transform.translation.x > right {
                     transform.translation.x = right;
                     if physics_state.velocity.x > 0.0 {
-                        physics_state.velocity.x = physics_state.velocity.x * physics_state.bounce_factor * -1.0;
+                        physics_state.velocity.x =
+                            -(physics_state.velocity.x * physics_state.bounce_factor);
                         if physics_state.velocity.x < -BOUNCE_AUDIO_THRESHOLD {
                             bounced = true;
                         }
@@ -121,7 +133,8 @@ pub fn update_physics_sprites(
                 if transform.translation.y < bottom {
                     transform.translation.y = bottom;
                     if physics_state.velocity.y < 0.0 {
-                        physics_state.velocity.y = physics_state.velocity.y * physics_state.bounce_factor * -1.0;
+                        physics_state.velocity.y =
+                            -(physics_state.velocity.y * physics_state.bounce_factor);
                         if physics_state.velocity.y > BOUNCE_AUDIO_THRESHOLD {
                             bounced = true;
                         }
@@ -130,7 +143,8 @@ pub fn update_physics_sprites(
                     // apply friction
                     if physics_state.velocity.x != 0.0 {
                         let vx = physics_state.velocity.x * physics_state.roughness_factor;
-                        if abs(vx) <= 1.0 { // threshold
+                        if abs(vx) <= 1.0 {
+                            // threshold
                             physics_state.velocity.x = 0.0;
                         } else {
                             physics_state.velocity.x = vx;
@@ -141,21 +155,20 @@ pub fn update_physics_sprites(
                 if transform.translation.y > top {
                     transform.translation.y = top;
                     if physics_state.velocity.y > 0.0 {
-                        physics_state.velocity.y = physics_state.velocity.y * physics_state.bounce_factor * -1.0;
+                        physics_state.velocity.y =
+                            -(physics_state.velocity.y * physics_state.bounce_factor);
                         if physics_state.velocity.y < -BOUNCE_AUDIO_THRESHOLD {
                             bounced = true;
                         }
                     }
                 }
 
-                if bounced {
-                    if let Some(bounce_sound_fx) = physics_state.bounce_sound_fx.clone() {
-                        let speed = rand::rng().random_range(0.9..=1.1);
-                        commands.spawn((
-                            AudioPlayer::new(bounce_sound_fx.clone()),
-                            PlaybackSettings::DESPAWN.with_speed(speed),
-                        ));
-                    }
+                if bounced && let Some(bounce_sound_fx) = physics_state.bounce_sound_fx.clone() {
+                    let speed = rand::rng().random_range(0.9..=1.1);
+                    commands.spawn((
+                        AudioPlayer::new(bounce_sound_fx.clone()),
+                        PlaybackSettings::DESPAWN.with_speed(speed),
+                    ));
                 }
             }
         }

@@ -1,10 +1,25 @@
 use bevy::{
-    asset::Handle, audio::{AudioPlayer, AudioSource, PlaybackSettings}, camera::Camera, ecs::{
-        component::Component, observer::On, query::With, system::{Commands, Query, Res},
-    }, image::Image, input::{ButtonInput, ButtonState, mouse::{MouseButton, MouseButtonInput}}, math::Vec3, picking::{
+    asset::Handle,
+    audio::{AudioPlayer, AudioSource, PlaybackSettings},
+    camera::Camera,
+    ecs::{
+        component::Component,
+        observer::On,
+        query::With,
+        system::{Commands, Query, Res},
+    },
+    image::Image,
+    input::{ButtonInput, mouse::MouseButton},
+    math::Vec3,
+    picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress, PointerRelease},
-    }, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window},
+    },
+    sprite::Sprite,
+    time::Time,
+    transform::components::{GlobalTransform, Transform},
+    utils::default,
+    window::{PrimaryWindow, Window},
 };
 use rand::RngExt;
 
@@ -90,24 +105,28 @@ impl ConfigurableSprite {
             let default_image = self.default_image.clone();
 
             entity.observe(
-                move |event: On<PointerOver>, mut sprites: Query<&mut Sprite>, mut drag_states: Query<&mut DragState>| {
+                move |event: On<PointerOver>,
+                      mut sprites: Query<&mut Sprite>,
+                      mut drag_states: Query<&mut DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get_mut(event.entity) {
-                            if drag_state.dragging {
-                                return;
-                            }
+                        if let Ok(drag_state) = drag_states.get_mut(event.entity)
+                            && drag_state.dragging
+                        {
+                            return;
                         }
                         sprite.image = hover_image.clone();
                     }
                 },
             );
             entity.observe(
-                move |event: On<PointerOut>, mut sprites: Query<&mut Sprite>, mut drag_states: Query<&mut DragState>| {
+                move |event: On<PointerOut>,
+                      mut sprites: Query<&mut Sprite>,
+                      mut drag_states: Query<&mut DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get_mut(event.entity) {
-                            if drag_state.dragging {
-                                return;
-                            }
+                        if let Ok(drag_state) = drag_states.get_mut(event.entity)
+                            && drag_state.dragging
+                        {
+                            return;
                         }
                         sprite.image = default_image.clone();
                     }
@@ -115,18 +134,16 @@ impl ConfigurableSprite {
             );
         }
 
-        // optionally configure audio playback for hovering 
+        // optionally configure audio playback for hovering
         if let Some(hover_sound_fx) = self.hover_sound_fx {
-            entity.observe(
-                move |_: On<PointerOver>, mut commands: Commands| {
-                    let speed = rand::rng().random_range(0.9..=1.1);
+            entity.observe(move |_: On<PointerOver>, mut commands: Commands| {
+                let speed = rand::rng().random_range(0.9..=1.1);
 
-                    commands.spawn((
-                        AudioPlayer::new(hover_sound_fx.clone()),
-                        PlaybackSettings::DESPAWN.with_speed(speed),
-                    ));
-                }
-            );
+                commands.spawn((
+                    AudioPlayer::new(hover_sound_fx.clone()),
+                    PlaybackSettings::DESPAWN.with_speed(speed),
+                ));
+            });
         }
 
         // optionally configure picking setup for pressing/releasing
@@ -151,25 +168,24 @@ impl ConfigurableSprite {
 
         // optionally configure audio playback for pressing
         if let Some(press_sound_fx) = self.press_sound_fx {
-            entity.observe(
-                move |_: On<PointerPress>, mut commands: Commands| {
-                    let speed = rand::rng().random_range(0.9..=1.1);
+            entity.observe(move |_: On<PointerPress>, mut commands: Commands| {
+                let speed = rand::rng().random_range(0.9..=1.1);
 
-                    commands.spawn((
-                        AudioPlayer::new(press_sound_fx.clone()),
-                        PlaybackSettings::DESPAWN.with_speed(speed),
-                    ));
-                }
-            );
+                commands.spawn((
+                    AudioPlayer::new(press_sound_fx.clone()),
+                    PlaybackSettings::DESPAWN.with_speed(speed),
+                ));
+            });
         }
-
 
         // optionally configure the sprite being draggable
         if self.draggable {
             entity.insert(DragState::default());
 
             entity.observe(
-                |event: On<PointerPress>, mut drag_states: Query<&mut DragState>, mut physics_states: Query<&mut physics::PhysicsState>| {
+                |event: On<PointerPress>,
+                 mut drag_states: Query<&mut DragState>,
+                 mut physics_states: Query<&mut physics::PhysicsState>| {
                     if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
                         drag_state.dragging = true;
                     }
@@ -196,7 +212,7 @@ impl ConfigurableSprite {
 #[derive(Component, Default)]
 pub struct DragState {
     dragging: bool,
-    pub last_world_position: Vec3
+    pub last_world_position: Vec3,
 }
 
 // looks for entities with a drag state component and if dragging is enabled then
@@ -220,11 +236,12 @@ pub fn update_dragged_sprites(
             let Some(cursor_position) = window.cursor_position() else {
                 return;
             };
-            
 
             if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
                 transform.translation = world_pos.extend(0.0);
-                physics_state.set_velocity((transform.translation - drag_state.last_world_position) / time.delta_secs());
+                physics_state.set_velocity(
+                    (transform.translation - drag_state.last_world_position) / time.delta_secs(),
+                );
                 drag_state.last_world_position = transform.translation;
             }
         }
@@ -233,10 +250,7 @@ pub fn update_dragged_sprites(
 
 pub fn stop_dragging_on_mouse_release(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
-    mut draggables: Query<(
-        &mut DragState,
-        Option<&mut PhysicsState>,
-    )>,
+    mut draggables: Query<(&mut DragState, Option<&mut PhysicsState>)>,
 ) {
     if !mouse_buttons.just_released(MouseButton::Left) {
         return;
