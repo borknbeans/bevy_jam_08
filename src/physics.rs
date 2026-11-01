@@ -2,7 +2,7 @@ use bevy::{
     asset::Assets, camera::Camera, ecs::{
         component::Component,
         system::{Query, Res},
-    }, image::Image, math::{Vec2, Vec3}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
+    }, image::Image, math::{Vec2, Vec3, ops::abs}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
 };
 
 use crate::sprites::DragState;
@@ -12,14 +12,18 @@ pub struct PhysicsState {
     enabled: bool,
     gravity: f32,
     velocity: Vec2,
+    bounce_factor: f32,
+    roughness_factor: f32,
 }
 
 impl PhysicsState {
     pub fn new() -> Self {
         Self {
             enabled: true,
-            gravity: 1980.0,
+            gravity: 2000.0,
             velocity: Vec2::new(0.0, 0.0),
+            bounce_factor: 0.15,
+            roughness_factor: 0.35,
         }
     }
 
@@ -89,28 +93,38 @@ pub fn update_physics_sprites(
                 if transform.translation.x < left {
                     transform.translation.x = left;
                     if physics_state.velocity.x < 0.0 {
-                        physics_state.velocity.x = 0.0;
+                        physics_state.velocity.x = physics_state.velocity.x * physics_state.bounce_factor * -1.0;
                     }
                 }
 
                 if transform.translation.x > right {
                     transform.translation.x = right;
                     if physics_state.velocity.x > 0.0 {
-                        physics_state.velocity.x = 0.0;
+                        physics_state.velocity.x = physics_state.velocity.x * physics_state.bounce_factor * -1.0;
                     }
                 }
 
                 if transform.translation.y < bottom {
                     transform.translation.y = bottom;
                     if physics_state.velocity.y < 0.0 {
-                        physics_state.velocity.y = 0.0;
+                        physics_state.velocity.y = physics_state.velocity.y * physics_state.bounce_factor * -1.0;
+                    }
+
+                    // apply friction
+                    if physics_state.velocity.x != 0.0 {
+                        let vx = physics_state.velocity.x * physics_state.roughness_factor;
+                        if abs(vx) <= 1.0 { // threshold
+                            physics_state.velocity.x = 0.0;
+                        } else {
+                            physics_state.velocity.x = vx;
+                        }
                     }
                 }
 
                 if transform.translation.y > top {
                     transform.translation.y = top;
                     if physics_state.velocity.y > 0.0 {
-                        physics_state.velocity.y = 0.0;
+                        physics_state.velocity.y = physics_state.velocity.y * physics_state.bounce_factor * -1.0;
                     }
                 }
             }
