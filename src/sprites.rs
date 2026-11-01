@@ -1,24 +1,13 @@
 use bevy::{
-    asset::Handle,
-    camera::Camera,
-    ecs::{
-        component::Component,
-        observer::On,
-        query::With,
-        system::{Commands, Query},
-    },
-    image::Image,
-    picking::{
+    asset::Handle, camera::Camera, ecs::{
+        component::Component, observer::On, query::With, system::{Commands, Query, Res},
+    }, image::Image, math::Vec3, picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress, PointerRelease},
-    },
-    sprite::Sprite,
-    transform::components::{GlobalTransform, Transform},
-    utils::default,
-    window::{PrimaryWindow, Window},
+    }, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window},
 };
 
-use crate::physics;
+use crate::physics::{self, PhysicsState};
 
 pub struct ConfigurableSprite {
     default_image: Handle<Image>,
@@ -160,6 +149,7 @@ impl ConfigurableSprite {
 #[derive(Component, Default)]
 pub struct DragState {
     dragging: bool,
+    pub last_world_position: Vec3
 }
 
 // looks for entities with a drag state component and if dragging is enabled then
@@ -167,9 +157,10 @@ pub struct DragState {
 pub fn update_dragged_sprites(
     windows: Query<&Window, With<PrimaryWindow>>,
     cameras: Query<(&Camera, &GlobalTransform)>,
-    mut sprites: Query<(&DragState, &mut Transform)>,
+    time: Res<Time>,
+    mut sprites: Query<(&mut DragState, &mut PhysicsState, &mut Transform)>,
 ) {
-    for (drag_state, mut transform) in &mut sprites {
+    for (mut drag_state, mut physics_state, mut transform) in &mut sprites {
         if drag_state.dragging {
             let Ok(window) = windows.single() else {
                 return;
@@ -182,9 +173,12 @@ pub fn update_dragged_sprites(
             let Some(cursor_position) = window.cursor_position() else {
                 return;
             };
+            
 
             if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
                 transform.translation = world_pos.extend(0.0);
+                physics_state.set_velocity((transform.translation - drag_state.last_world_position) / time.delta_secs());
+                drag_state.last_world_position = transform.translation;
             }
         }
     }

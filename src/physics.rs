@@ -2,8 +2,10 @@ use bevy::{
     asset::Assets, camera::Camera, ecs::{
         component::Component,
         system::{Query, Res},
-    }, image::Image, math::Vec2, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
+    }, image::Image, math::{Vec2, Vec3}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
 };
+
+use crate::sprites::DragState;
 
 #[derive(Component)]
 pub struct PhysicsState {
@@ -16,7 +18,7 @@ impl PhysicsState {
     pub fn new() -> Self {
         Self {
             enabled: true,
-            gravity: 980.0,
+            gravity: 1980.0,
             velocity: Vec2::new(0.0, 0.0),
         }
     }
@@ -33,6 +35,11 @@ impl PhysicsState {
         self.velocity.x = 0.0;
         self.velocity.y = 0.0;
     }
+
+    pub fn set_velocity(&mut self, v: Vec3) {
+        self.velocity.x = v.x;
+        self.velocity.y = v.y;
+    } 
 }
 
 pub fn update_physics_sprites(
@@ -59,6 +66,7 @@ pub fn update_physics_sprites(
         };
 
         for (sprite, mut physics_state, mut transform) in &mut sprites {
+
             if physics_state.enabled {
                 let sprite_size = sprite.custom_size.or_else(|| images.get(&sprite.image).map(|image| image.size_f32()));
 
