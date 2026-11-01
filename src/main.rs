@@ -4,7 +4,8 @@ use bevy::prelude::*;
 mod audio;
 mod drag;
 mod physics;
-mod sprites;
+mod sprite;
+mod sprite_factory;
 
 fn main() {
     App::new()
@@ -28,7 +29,7 @@ fn main() {
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
-    sprites::ConfigurableSprite::new(asset_server.load("art/potion.png"))
+    sprite::ConfigurableSprite::new(asset_server.load("art/potion.png"))
         .with_hover_image(asset_server.load("art/potion_hover.png"))
         .with_press_image(asset_server.load("art/potion_pressed.png"))
         .with_bounce_sound(asset_server.load("audio/glass-clink.ogg"))

@@ -11,7 +11,7 @@ use smart_default::SmartDefault;
 
 #[derive(Resource, SmartDefault)]
 pub struct AudioFactory {
-    requests: Vec<AudioRequest>,
+    requests: Vec<AudioBundle>,
     #[default(1.0)]
     master_volume: f32,
     #[default(1.0)]
@@ -23,7 +23,7 @@ pub struct AudioFactory {
 }
 
 #[derive(Clone)]
-pub struct AudioRequest {
+pub struct AudioBundle {
     source: Handle<AudioSource>,
     category: AudioCategory,
 }
@@ -36,8 +36,12 @@ pub enum AudioCategory {
 }
 
 impl AudioFactory {
+    pub fn play_sound(&mut self, bundle: AudioBundle) {
+        self.requests.push(bundle);
+    }
+
     pub fn play_sound_effect(&mut self, source: Handle<AudioSource>, category: AudioCategory) {
-        self.requests.push(AudioRequest { source, category });
+        self.requests.push(AudioBundle { source, category });
     }
 }
 

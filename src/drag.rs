@@ -1,18 +1,10 @@
 use bevy::{
-    camera::Camera,
-    ecs::{
-        component::Component,
-        query::With,
-        system::{Query, Res},
-    },
-    input::{ButtonInput, mouse::MouseButton},
-    math::Vec3,
-    time::Time,
-    transform::components::{GlobalTransform, Transform},
-    window::{PrimaryWindow, Window},
+    camera::Camera, ecs::{
+        component::Component, query::With, system::{Query, Res, ResMut},
+    }, input::{ButtonInput, mouse::MouseButton}, math::Vec3, time::Time, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window},
 };
 
-use crate::physics::PhysicsState;
+use crate::{audio::AudioFactory, physics::PhysicsState, sprite::SpriteAudioSettings};
 
 #[derive(Component, Default)]
 pub struct DragState {
@@ -55,18 +47,25 @@ pub fn update_dragged_sprites(
 
 pub fn stop_dragging_on_mouse_release(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
-    mut draggables: Query<(&mut DragState, Option<&mut PhysicsState>)>,
+    mut audio_factory: ResMut<AudioFactory>,
+    mut draggables: Query<(&mut DragState, Option<&mut PhysicsState>, Option<&SpriteAudioSettings>)>,
 ) {
     if !mouse_buttons.just_released(MouseButton::Left) {
         return;
     }
 
-    for (mut drag_state, physics_state) in &mut draggables {
+    for (mut drag_state, physics_state, audio_settings) in &mut draggables {
         if drag_state.dragging {
             drag_state.dragging = false;
 
             if let Some(mut physics_state) = physics_state {
                 physics_state.enable();
+            }
+
+            if let Some(audio_settings) = audio_settings {
+                if let Some(release_sound) = audio_settings.release_sound.clone() {
+                    audio_factory.play_sound(release_sound);
+                }
             }
         }
     }

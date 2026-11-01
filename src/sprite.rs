@@ -1,34 +1,44 @@
 use bevy::{
-    asset::Handle,
-    audio::{AudioPlayer, AudioSource, PlaybackSettings},
-    ecs::{
-        observer::On,
-        system::{Commands, Query},
-    },
-    image::Image,
-    picking::{
+    asset::Handle, audio::{AudioPlayer, AudioSource, PlaybackSettings}, ecs::{
+        component::Component, observer::On, system::{Commands, Query, Res, ResMut},
+    }, image::Image, picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress, PointerRelease},
-    },
-    sprite::Sprite,
-    utils::default,
+    }, sprite::Sprite, utils::default,
 };
 use rand::RngExt;
 
 use crate::{
-    drag::DragState,
-    physics::{self, PhysicsState},
+    audio::AudioBundle, drag::DragState, physics::{self, PhysicsState},
 };
 
 pub struct ConfigurableSprite {
-    default_image: Handle<Image>,
-    hover_image: Option<Handle<Image>>,
-    press_image: Option<Handle<Image>>,
-    hover_sound_fx: Option<Handle<AudioSource>>,
-    press_sound_fx: Option<Handle<AudioSource>>,
-    bounce_sound_fx: Option<Handle<AudioSource>>,
-    draggable: bool,
-    apply_physics: bool,
+    pub default_image: Handle<Image>,
+    pub hover_image: Option<Handle<Image>>,
+    pub press_image: Option<Handle<Image>>,
+    pub hover_sound_fx: Option<Handle<AudioSource>>,
+    pub press_sound_fx: Option<Handle<AudioSource>>,
+    pub bounce_sound_fx: Option<Handle<AudioSource>>,
+    pub visual_settings: SpriteVisualSettings,
+    pub audio_settings: SpriteAudioSettings,
+    pub draggable: bool,
+    pub apply_physics: bool,
+}
+
+#[derive(Clone, Component, Default)]
+pub struct SpriteVisualSettings {
+    default_img: Option<Handle<Image>>,
+    hover_img: Option<Handle<Image>>,
+    press_img: Option<Handle<Image>>,
+}
+
+#[derive(Clone, Component, Default)]
+pub struct SpriteAudioSettings {
+    pub hover_enter_sound: Option<AudioBundle>,
+    pub hover_exit_sound: Option<AudioBundle>,
+    pub press_sound: Option<AudioBundle>,
+    pub release_sound: Option<AudioBundle>,
+    pub bounce_sound: Option<AudioBundle>,
 }
 
 impl ConfigurableSprite {
@@ -40,6 +50,8 @@ impl ConfigurableSprite {
             hover_sound_fx: None,
             press_sound_fx: None,
             bounce_sound_fx: None,
+            visual_settings: SpriteVisualSettings::default(),
+            audio_settings: SpriteAudioSettings::default(),
             draggable: false,
             apply_physics: false,
         }
@@ -132,13 +144,8 @@ impl ConfigurableSprite {
 
         // optionally configure audio playback for hovering
         if let Some(hover_sound_fx) = self.hover_sound_fx {
-            entity.observe(move |_: On<PointerOver>, mut commands: Commands| {
-                let speed = rand::rng().random_range(0.9..=1.1);
-
-                commands.spawn((
-                    AudioPlayer::new(hover_sound_fx.clone()),
-                    PlaybackSettings::DESPAWN.with_speed(speed),
-                ));
+            entity.observe(move |_: On<PointerOver>, mut audio_factory: ResMut<crate::audio::AudioFactory>| {
+                audio_factory.play_sound_effect(hover_sound_fx.clone(), crate::audio::AudioCategory::SOUND_EFFECT);
             });
         }
 
@@ -164,13 +171,8 @@ impl ConfigurableSprite {
 
         // optionally configure audio playback for pressing
         if let Some(press_sound_fx) = self.press_sound_fx {
-            entity.observe(move |_: On<PointerPress>, mut commands: Commands| {
-                let speed = rand::rng().random_range(0.9..=1.1);
-
-                commands.spawn((
-                    AudioPlayer::new(press_sound_fx.clone()),
-                    PlaybackSettings::DESPAWN.with_speed(speed),
-                ));
+            entity.observe(move |_: On<PointerPress>, mut audio_factory: ResMut<crate::audio::AudioFactory>| {
+                audio_factory.play_sound_effect(press_sound_fx.clone(), crate::audio::AudioCategory::SOUND_EFFECT);
             });
         }
 
