@@ -33,3 +33,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .apply_physics()
         .spawn(commands);
 }
+
+// TODO: a ConfigurableSpriteFactory that can spawn a new ConfigurableSprite when clicked on
+// TODO: a trash can to delete sprites are are dropped into it
+// TODO: a way to tag a sprite as an "ingredient"
+// TODO: A "cauldron" that allows you to place ingredients into it and "create" a potion
+// TODO: the cauldron should read from available recipes and transform the inputs into an output
+// sprite
