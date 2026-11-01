@@ -1,24 +1,18 @@
 use bevy::{
-    asset::Handle, audio::{AudioPlayer, AudioSource, PlaybackSettings}, ecs::{
-        component::Component, observer::On, system::{Commands, Query, Res, ResMut},
+    asset::Handle, ecs::{
+        component::Component, observer::On, system::{Commands, EntityCommands, Query, ResMut},
     }, image::Image, picking::{
         Pickable,
-        events::{PointerOut, PointerOver, PointerPress, PointerRelease},
+        events::{PointerOut, PointerOver, PointerPress},
     }, sprite::Sprite, utils::default,
 };
-use rand::RngExt;
 
 use crate::{
-    audio::AudioBundle, drag::DragState, physics::{self, PhysicsState},
+    audio::{AudioBundle, AudioFactory}, drag::DragState, physics::PhysicsState,
 };
 
+#[derive(Clone, Default)]
 pub struct ConfigurableSprite {
-    pub default_image: Handle<Image>,
-    pub hover_image: Option<Handle<Image>>,
-    pub press_image: Option<Handle<Image>>,
-    pub hover_sound_fx: Option<Handle<AudioSource>>,
-    pub press_sound_fx: Option<Handle<AudioSource>>,
-    pub bounce_sound_fx: Option<Handle<AudioSource>>,
     pub visual_settings: SpriteVisualSettings,
     pub audio_settings: SpriteAudioSettings,
     pub draggable: bool,
@@ -27,9 +21,9 @@ pub struct ConfigurableSprite {
 
 #[derive(Clone, Component, Default)]
 pub struct SpriteVisualSettings {
-    default_img: Option<Handle<Image>>,
-    hover_img: Option<Handle<Image>>,
-    press_img: Option<Handle<Image>>,
+    pub default_img: Handle<Image>,
+    pub hover_img: Option<Handle<Image>>,
+    pub press_img: Option<Handle<Image>>,
 }
 
 #[derive(Clone, Component, Default)]
@@ -42,49 +36,25 @@ pub struct SpriteAudioSettings {
 }
 
 impl ConfigurableSprite {
-    pub fn new(default_image: Handle<Image>) -> Self {
+    pub fn new(default_img: Handle<Image>) -> Self {
         Self {
-            default_image,
-            hover_image: None,
-            press_image: None,
-            hover_sound_fx: None,
-            press_sound_fx: None,
-            bounce_sound_fx: None,
-            visual_settings: SpriteVisualSettings::default(),
+            visual_settings: SpriteVisualSettings {
+                default_img,
+                ..default()
+            },
             audio_settings: SpriteAudioSettings::default(),
             draggable: false,
             apply_physics: false,
         }
     }
 
-    // set a new image when hovered
-    pub fn with_hover_image(mut self, image: Handle<Image>) -> Self {
-        self.hover_image = Some(image);
+    pub fn with_visual_settings(mut self, settings: SpriteVisualSettings) -> Self {
+        self.visual_settings = settings;
         self
     }
 
-    // set a new image when pressed
-    pub fn with_press_image(mut self, image: Handle<Image>) -> Self {
-        self.press_image = Some(image);
-        self
-    }
-
-    // set hover sound effect
-    #[allow(dead_code)]
-    pub fn with_hover_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
-        self.hover_sound_fx = Some(sound_fx);
-        self
-    }
-
-    // set press sound effect
-    pub fn with_press_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
-        self.press_sound_fx = Some(sound_fx);
-        self
-    }
-
-    // set bounce sound effect
-    pub fn with_bounce_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
-        self.bounce_sound_fx = Some(sound_fx);
+    pub fn with_audio_settings(mut self, settings: SpriteAudioSettings) -> Self {
+        self.audio_settings = settings;
         self
     }
 
@@ -102,88 +72,22 @@ impl ConfigurableSprite {
     pub fn spawn(self, mut commands: Commands) {
         let mut entity = commands.spawn((
             Sprite {
-                image: self.default_image.clone(),
+                image: self.visual_settings.default_img.clone(),
                 ..default()
             },
             Pickable::default(),
+            self.audio_settings.clone(),
+            self.visual_settings.clone(),
         ));
 
-        // optionally configure picking setup for hovering enter/exit
-        if let Some(hover_image) = self.hover_image {
-            let default_image = self.default_image.clone();
-
-            entity.observe(
-                move |event: On<PointerOver>,
-                      mut sprites: Query<&mut Sprite>,
-                      mut drag_states: Query<&mut DragState>| {
-                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get_mut(event.entity)
-                            && drag_state.dragging
-                        {
-                            return;
-                        }
-                        sprite.image = hover_image.clone();
-                    }
-                },
-            );
-            entity.observe(
-                move |event: On<PointerOut>,
-                      mut sprites: Query<&mut Sprite>,
-                      mut drag_states: Query<&mut DragState>| {
-                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get_mut(event.entity)
-                            && drag_state.dragging
-                        {
-                            return;
-                        }
-                        sprite.image = default_image.clone();
-                    }
-                },
-            );
-        }
-
-        // optionally configure audio playback for hovering
-        if let Some(hover_sound_fx) = self.hover_sound_fx {
-            entity.observe(move |_: On<PointerOver>, mut audio_factory: ResMut<crate::audio::AudioFactory>| {
-                audio_factory.play_sound_effect(hover_sound_fx.clone(), crate::audio::AudioCategory::SOUND_EFFECT);
-            });
-        }
-
-        // optionally configure picking setup for pressing/releasing
-        if let Some(press_image) = self.press_image {
-            let default_image = self.default_image.clone();
-
-            entity.observe(
-                move |event: On<PointerPress>, mut sprites: Query<&mut Sprite>| {
-                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        sprite.image = press_image.clone();
-                    }
-                },
-            );
-            entity.observe(
-                move |event: On<PointerRelease>, mut sprites: Query<&mut Sprite>| {
-                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        sprite.image = default_image.clone();
-                    }
-                },
-            );
-        }
-
-        // optionally configure audio playback for pressing
-        if let Some(press_sound_fx) = self.press_sound_fx {
-            entity.observe(move |_: On<PointerPress>, mut audio_factory: ResMut<crate::audio::AudioFactory>| {
-                audio_factory.play_sound_effect(press_sound_fx.clone(), crate::audio::AudioCategory::SOUND_EFFECT);
-            });
-        }
-
-        // optionally configure the sprite being draggable
         if self.draggable {
             entity.insert(DragState::default());
 
+            // On click, set update drag state and (if applicable) disable physics
             entity.observe(
                 |event: On<PointerPress>,
-                 mut drag_states: Query<&mut DragState>,
-                 mut physics_states: Query<&mut physics::PhysicsState>| {
+                mut drag_states: Query<&mut DragState>,
+                mut physics_states: Query<&mut PhysicsState>| {
                     if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
                         drag_state.dragging = true;
                     }
@@ -196,13 +100,80 @@ impl ConfigurableSprite {
             );
         }
 
-        // optionally enable physics on sprite (gravity and velocity)
-        if self.apply_physics {
-            let mut physics_state = PhysicsState::new();
-            if let Some(bounce_sound_fx) = self.bounce_sound_fx {
-                physics_state.set_bounce_fx(bounce_sound_fx);
-            }
-            entity.insert(physics_state);
+        // VISUAL
+        if let Some(hover_img) = self.visual_settings.hover_img.clone() {
+            let default_img = self.visual_settings.default_img.clone();
+            
+            // Update to hover image
+            entity.observe(
+                move |event: On<PointerOver>,
+                mut sprites: Query<&mut Sprite>,
+                drag_states: Query<&DragState>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        if let Ok(drag_state) = drag_states.get(event.entity) && drag_state.dragging {
+                            return;
+                        }
+                        sprite.image = hover_img.clone();
+                    }
+                } 
+            );
+
+            // Update back to default image
+            entity.observe(
+                move |event: On<PointerOut>,
+                mut sprites: Query<&mut Sprite>,
+                drag_states: Query<&DragState>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        if let Ok(drag_state) = drag_states.get(event.entity) && drag_state.dragging {
+                            return;
+                        }
+                        sprite.image = default_img.clone();
+                    }
+                } 
+            );
+        }
+        
+        if let Some(press_img) = self.visual_settings.press_img.clone() {
+            // Update to press image
+            entity.observe(
+                move |event: On<PointerPress>,
+                mut sprites: Query<&mut Sprite>,
+                drag_states: Query<&DragState>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        if let Ok(drag_state) = drag_states.get(event.entity) && drag_state.dragging {
+                            return;
+                        }
+                        sprite.image = press_img.clone();
+                    }
+                } 
+            );
+            // Updating back is handled in drag.rs when watching for mouse release
+        }
+
+
+        // AUDIO
+        if let Some(hover_enter_sound) = self.audio_settings.hover_enter_sound.clone() {
+            entity.observe(
+                move |_: On<PointerOver>, mut audio_factory: ResMut<AudioFactory>| {
+                    audio_factory.play_sound(hover_enter_sound.clone());
+                }
+            );
+        }
+
+        if let Some(hover_exit_sound) = self.audio_settings.hover_exit_sound.clone() {
+            entity.observe(
+                move |_: On<PointerOut>, mut audio_factory: ResMut<AudioFactory>| {
+                    audio_factory.play_sound(hover_exit_sound.clone());
+                }
+            );
+        }
+
+        if let Some(press_sound) = self.audio_settings.press_sound.clone() {
+            entity.observe(
+                move |_: On<PointerPress>, mut audio_factory: ResMut<AudioFactory>| {
+                    audio_factory.play_sound(press_sound.clone());
+                }
+            );
         }
     }
 }

@@ -29,14 +29,32 @@ fn main() {
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
-    sprite::ConfigurableSprite::new(asset_server.load("art/potion.png"))
-        .with_hover_image(asset_server.load("art/potion_hover.png"))
-        .with_press_image(asset_server.load("art/potion_pressed.png"))
-        .with_bounce_sound(asset_server.load("audio/glass-clink.ogg"))
-        .with_press_sound(asset_server.load("audio/cork-pop.ogg"))
-        .draggable()
-        .apply_physics()
-        .spawn(commands);
+   
+    // Frog leg factory
+    let frog_leg_factory = sprite_factory::SpriteFactory {
+        sprite: sprite::ConfigurableSprite::default()
+            .with_visual_settings(sprite::SpriteVisualSettings {
+                default_img: asset_server.load("art/frog-leg.png"),
+                ..default()
+            })
+            .draggable()
+            .apply_physics(),
+    };
+    sprite::ConfigurableSprite::default()
+        .with_visual_settings(sprite::SpriteVisualSettings {
+            default_img: asset_server.load("art/frog-bag.png"),
+            hover_img: Some(asset_server.load("art/frog-bag_hover.png")),
+            ..default()
+        });
+    
+    // sprite::ConfigurableSprite::new(asset_server.load("art/potion.png"))
+    //     .with_hover_image(asset_server.load("art/potion_hover.png"))
+    //     .with_press_image(asset_server.load("art/potion_pressed.png"))
+    //     .with_bounce_sound(asset_server.load("audio/glass-clink.ogg"))
+    //     .with_press_sound(asset_server.load("audio/cork-pop.ogg"))
+    //     .draggable()
+    //     .apply_physics()
+    //     .spawn(commands);
 }
 
 // TODO: ConfigurableSprite should optionally support animations! For example, hovering or pressing

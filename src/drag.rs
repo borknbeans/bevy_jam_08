@@ -1,10 +1,10 @@
 use bevy::{
     camera::Camera, ecs::{
         component::Component, query::With, system::{Query, Res, ResMut},
-    }, input::{ButtonInput, mouse::MouseButton}, math::Vec3, time::Time, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window},
+    }, input::{ButtonInput, mouse::MouseButton}, math::Vec3, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window},
 };
 
-use crate::{audio::AudioFactory, physics::PhysicsState, sprite::SpriteAudioSettings};
+use crate::{audio::AudioFactory, physics::PhysicsState, sprite::{SpriteAudioSettings, SpriteVisualSettings}};
 
 #[derive(Component, Default)]
 pub struct DragState {
@@ -48,13 +48,13 @@ pub fn update_dragged_sprites(
 pub fn stop_dragging_on_mouse_release(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut audio_factory: ResMut<AudioFactory>,
-    mut draggables: Query<(&mut DragState, Option<&mut PhysicsState>, Option<&SpriteAudioSettings>)>,
+    mut draggables: Query<(&mut Sprite, &mut DragState, Option<&mut PhysicsState>, Option<&SpriteAudioSettings>, Option<&SpriteVisualSettings>)>,
 ) {
     if !mouse_buttons.just_released(MouseButton::Left) {
         return;
     }
 
-    for (mut drag_state, physics_state, audio_settings) in &mut draggables {
+    for (mut sprite, mut drag_state, physics_state, audio_settings, visual_settings) in &mut draggables {
         if drag_state.dragging {
             drag_state.dragging = false;
 
@@ -66,6 +66,10 @@ pub fn stop_dragging_on_mouse_release(
                 if let Some(release_sound) = audio_settings.release_sound.clone() {
                     audio_factory.play_sound(release_sound);
                 }
+            }
+
+            if let Some(visual_settings) = visual_settings {
+                sprite.image = visual_settings.default_img.clone();
             }
         }
     }
