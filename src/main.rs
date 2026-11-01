@@ -15,6 +15,7 @@ fn main() {
             Update,
             (
                 sprites::update_dragged_sprites,
+                sprites::stop_dragging_on_mouse_release,
                 physics::update_physics_sprites,
             ),
         )

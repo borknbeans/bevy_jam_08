@@ -1,7 +1,7 @@
 use bevy::{
     asset::Handle, audio::{AudioPlayer, AudioSource, PlaybackSettings}, camera::Camera, ecs::{
         component::Component, observer::On, query::With, system::{Commands, Query, Res},
-    }, image::Image, math::Vec3, picking::{
+    }, image::Image, input::{ButtonInput, ButtonState, mouse::{MouseButton, MouseButtonInput}}, math::Vec3, picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress, PointerRelease},
     }, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window},
@@ -180,17 +180,6 @@ impl ConfigurableSprite {
                     }
                 },
             );
-            entity.observe(
-                |event: On<PointerRelease>, mut drag_states: Query<&mut DragState>, mut physics_states: Query<&mut physics::PhysicsState>| {
-                    if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
-                        drag_state.dragging = false;
-                    }
-
-                    if let Ok(mut physics_state) = physics_states.get_mut(event.entity) {
-                        physics_state.enable();
-                    }
-                },
-            );
         }
 
         // optionally enable physics on sprite (gravity and velocity)
@@ -237,6 +226,28 @@ pub fn update_dragged_sprites(
                 transform.translation = world_pos.extend(0.0);
                 physics_state.set_velocity((transform.translation - drag_state.last_world_position) / time.delta_secs());
                 drag_state.last_world_position = transform.translation;
+            }
+        }
+    }
+}
+
+pub fn stop_dragging_on_mouse_release(
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    mut draggables: Query<(
+        &mut DragState,
+        Option<&mut PhysicsState>,
+    )>,
+) {
+    if !mouse_buttons.just_released(MouseButton::Left) {
+        return;
+    }
+
+    for (mut drag_state, physics_state) in &mut draggables {
+        if drag_state.dragging {
+            drag_state.dragging = false;
+
+            if let Some(mut physics_state) = physics_state {
+                physics_state.enable();
             }
         }
     }
