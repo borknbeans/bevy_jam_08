@@ -1,8 +1,6 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 
-use crate::sprites::spawn_hoverable_sprite;
-
 mod sprites;
 
 fn main() {
@@ -17,17 +15,9 @@ fn main() {
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
-    // commands.spawn((Sprite {
-    //     image: asset_server.load("ducky.png"),
-    //     ..Default::default()
-    // },
-    // Pickable::default(),
-    // ))
-    // .observe(on_pointer_change::<PointerOver>)
-    // .observe(on_pointer_change::<PointerOut>);
-    spawn_hoverable_sprite(commands, asset_server.load("ducky.png"), None, None, None, None);
+    sprites::ConfigurableSprite::new(asset_server.load("test_button.png"))
+        .with_hover_image(asset_server.load("test_button_hover.png"))
+        .with_press_image(asset_server.load("test_button_pressed.png"))
+        .spawn(commands);
 }
 
-// fn on_pointer_change<E: EntityEvent>(event: On<E>) {
-//     println!("Pointer event");
-// }
