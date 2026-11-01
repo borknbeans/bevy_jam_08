@@ -10,6 +10,7 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, setup)
+        .add_systems(Update, sprites::update_dragged_sprites)
         .run();
 }
 
@@ -18,6 +19,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     sprites::ConfigurableSprite::new(asset_server.load("test_button.png"))
         .with_hover_image(asset_server.load("test_button_hover.png"))
         .with_press_image(asset_server.load("test_button_pressed.png"))
+        .draggable()
         .spawn(commands);
 }
 

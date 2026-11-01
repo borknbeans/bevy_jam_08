@@ -1,9 +1,10 @@
-use bevy::{asset::Handle, ecs::{bundle::Bundle, observer::{IntoEntityObserver, On}, system::{Commands, Query}}, image::Image, picking::{Pickable, events::{PointerOut, PointerOver, PointerPress, PointerRelease}}, sprite::Sprite, utils::default};
+use bevy::{asset::Handle, camera::Camera, ecs::{bundle::Bundle, component::Component, observer::{IntoEntityObserver, On}, query::With, system::{Commands, Query, Single}}, image::Image, math::Vec2, picking::{Pickable, events::{PointerOut, PointerOver, PointerPress, PointerRelease}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window}};
 
 pub struct ConfigurableSprite {
     default_image: Handle<Image>,
     hover_image: Option<Handle<Image>>,
     press_image: Option<Handle<Image>>,
+    draggable: bool,
 }
 
 impl ConfigurableSprite {
@@ -12,6 +13,7 @@ impl ConfigurableSprite {
             default_image: default_image,
             hover_image: None,
             press_image: None,
+            draggable: false,
         }
     }
 
@@ -25,6 +27,11 @@ impl ConfigurableSprite {
         self
     }
 
+    pub fn draggable(mut self) -> Self {
+        self.draggable = true;
+        self
+    }
+
     pub fn spawn(self, mut commands: Commands) {
         let mut entity = commands.spawn((
             Sprite {
@@ -34,6 +41,7 @@ impl ConfigurableSprite {
             Pickable::default(),
         ));
 
+        // optionally configure picking setup for hovering enter/exit
         if let Some(hover_image) = self.hover_image {
             let default_image = self.default_image.clone();
 
@@ -49,6 +57,7 @@ impl ConfigurableSprite {
             });
         }
 
+        // optionally configure picking setup for pressing/releasing
         if let Some(press_image) = self.press_image {
             let default_image = self.default_image.clone();
 
@@ -64,6 +73,52 @@ impl ConfigurableSprite {
             });
         }
 
-    }
+        if self.draggable {
+            entity.insert(DragState::default());
 
+            entity.observe(|event: On<PointerPress>, mut drag_states: Query<&mut DragState>| {
+                if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
+                    drag_state.dragging = true;
+                }
+            });
+            entity.observe(|event: On<PointerRelease>, mut drag_states: Query<&mut DragState>| {
+                if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
+                    drag_state.dragging = false;
+                }
+            });
+        }
+
+    }
 }
+
+#[derive(Component, Default)]
+pub struct DragState {
+    dragging: bool,
+}
+
+pub fn update_dragged_sprites(
+    windows: Query<&Window, With<PrimaryWindow>>,
+    cameras: Query<(&Camera, &GlobalTransform)>,
+    mut sprites: Query<(&DragState, &mut Transform)>,
+) {
+    for (drag_state, mut transform) in &mut sprites {
+        if drag_state.dragging {
+            let Ok(window) = windows.single() else {
+                return;
+            };
+
+            let Ok((camera, camera_transform)) = cameras.single() else {
+                return;
+            };
+
+            let Some(cursor_position) = window.cursor_position() else {
+                return;
+            };
+
+            if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
+                transform.translation = world_pos.extend(0.0);
+            }
+        }
+    }
+}
+
