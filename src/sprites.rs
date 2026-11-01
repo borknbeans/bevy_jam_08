@@ -63,6 +63,7 @@ impl ConfigurableSprite {
     }
 
     // set hover sound effect
+    #[allow(dead_code)]
     pub fn with_hover_sound(mut self, sound_fx: Handle<AudioSource>) -> Self {
         self.hover_sound_fx = Some(sound_fx);
         self
