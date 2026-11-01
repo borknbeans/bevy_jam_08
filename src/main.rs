@@ -34,6 +34,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn(commands);
 }
 
+// TODO: ConfigurableSprite should optionally support animations! For example, hovering or pressing
+// should play an animation
+
 // TODO: a ConfigurableSpriteFactory that can spawn a new ConfigurableSprite when clicked on
 // TODO: a trash can to delete sprites are are dropped into it
 // TODO: a way to tag a sprite as an "ingredient"
@@ -41,3 +44,4 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 // TODO: the cauldron should read from available recipes and transform the inputs into an output
 // sprite
 // TODO: customers
+
