@@ -65,6 +65,9 @@ pub fn update_physics_sprites(
             if physics_state.enabled {
                 physics_state.velocity.y -= physics_state.gravity * time.delta_secs();
 
+                transform.translation.x += physics_state.velocity.x * time.delta_secs();
+                transform.translation.y += physics_state.velocity.y * time.delta_secs();
+
                 if transform.translation.x < tl.x {
                     transform.translation.x = tl.x;
                     if physics_state.velocity.x < 0.0 {
@@ -92,10 +95,6 @@ pub fn update_physics_sprites(
                         physics_state.velocity.y = 0.0;
                     }
                 }
-
-
-                transform.translation.x += physics_state.velocity.x * time.delta_secs();
-                transform.translation.y += physics_state.velocity.y * time.delta_secs();
             }
         }
     }
