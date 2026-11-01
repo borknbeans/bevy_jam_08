@@ -1,4 +1,4 @@
-use bevy::{asset::Handle, camera::Camera, ecs::{bundle::Bundle, component::Component, observer::{IntoEntityObserver, On}, query::With, system::{Commands, Query, Single}}, image::Image, math::Vec2, picking::{Pickable, events::{PointerOut, PointerOver, PointerPress, PointerRelease}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window}};
+use bevy::{asset::Handle, camera::Camera, ecs::{component::Component, observer::On, query::With, system::{Commands, Query}}, image::Image, picking::{Pickable, events::{PointerOut, PointerOver, PointerPress, PointerRelease}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window}};
 
 pub struct ConfigurableSprite {
     default_image: Handle<Image>,
@@ -10,7 +10,7 @@ pub struct ConfigurableSprite {
 impl ConfigurableSprite {
     pub fn new(default_image: Handle<Image>) -> Self {
         Self {
-            default_image: default_image,
+            default_image,
             hover_image: None,
             press_image: None,
             draggable: false,
