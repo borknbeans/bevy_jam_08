@@ -18,11 +18,14 @@ use bevy::{
     window::{PrimaryWindow, Window},
 };
 
+use crate::physics;
+
 pub struct ConfigurableSprite {
     default_image: Handle<Image>,
     hover_image: Option<Handle<Image>>,
     press_image: Option<Handle<Image>>,
     draggable: bool,
+    apply_physics: bool,
 }
 
 impl ConfigurableSprite {
@@ -32,6 +35,7 @@ impl ConfigurableSprite {
             hover_image: None,
             press_image: None,
             draggable: false,
+            apply_physics: false,
         }
     }
 
@@ -50,6 +54,11 @@ impl ConfigurableSprite {
     // enable dragging with the cursor
     pub fn draggable(mut self) -> Self {
         self.draggable = true;
+        self
+    }
+
+    pub fn apply_physics(mut self) -> Self {
+        self.apply_physics = true;
         self
     }
 
@@ -120,6 +129,11 @@ impl ConfigurableSprite {
                     }
                 },
             );
+        }
+
+        // optionally enable physics on sprite (gravity and velocity)
+        if self.apply_physics {
+            entity.insert(physics::PhysicsState::new().enable());
         }
     }
 }

@@ -1,6 +1,7 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 
+mod physics;
 mod sprites;
 
 fn main() {
@@ -10,7 +11,7 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, setup)
-        .add_systems(Update, sprites::update_dragged_sprites)
+        .add_systems(Update, (sprites::update_dragged_sprites, physics::update_physics_sprites))
         .run();
 }
 
@@ -20,5 +21,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .with_hover_image(asset_server.load("test_button_hover.png"))
         .with_press_image(asset_server.load("test_button_pressed.png"))
         .draggable()
+        .apply_physics()
         .spawn(commands);
 }
