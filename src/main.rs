@@ -40,3 +40,4 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 // TODO: A "cauldron" that allows you to place ingredients into it and "create" a potion
 // TODO: the cauldron should read from available recipes and transform the inputs into an output
 // sprite
+// TODO: customers
