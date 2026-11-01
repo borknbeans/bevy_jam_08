@@ -1,4 +1,22 @@
-use bevy::{asset::Handle, camera::Camera, ecs::{component::Component, observer::On, query::With, system::{Commands, Query}}, image::Image, picking::{Pickable, events::{PointerOut, PointerOver, PointerPress, PointerRelease}}, sprite::Sprite, transform::components::{GlobalTransform, Transform}, utils::default, window::{PrimaryWindow, Window}};
+use bevy::{
+    asset::Handle,
+    camera::Camera,
+    ecs::{
+        component::Component,
+        observer::On,
+        query::With,
+        system::{Commands, Query},
+    },
+    image::Image,
+    picking::{
+        Pickable,
+        events::{PointerOut, PointerOver, PointerPress, PointerRelease},
+    },
+    sprite::Sprite,
+    transform::components::{GlobalTransform, Transform},
+    utils::default,
+    window::{PrimaryWindow, Window},
+};
 
 pub struct ConfigurableSprite {
     default_image: Handle<Image>,
@@ -48,50 +66,61 @@ impl ConfigurableSprite {
         if let Some(hover_image) = self.hover_image {
             let default_image = self.default_image.clone();
 
-            entity.observe(move |event: On<PointerOver>, mut sprites: Query<&mut Sprite>| {
-                if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                    sprite.image = hover_image.clone();
-                }
-            });
-            entity.observe(move |event: On<PointerOut>, mut sprites: Query<&mut Sprite>| {
-                if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                    sprite.image = default_image.clone();
-                }
-            });
+            entity.observe(
+                move |event: On<PointerOver>, mut sprites: Query<&mut Sprite>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        sprite.image = hover_image.clone();
+                    }
+                },
+            );
+            entity.observe(
+                move |event: On<PointerOut>, mut sprites: Query<&mut Sprite>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        sprite.image = default_image.clone();
+                    }
+                },
+            );
         }
 
         // optionally configure picking setup for pressing/releasing
         if let Some(press_image) = self.press_image {
             let default_image = self.default_image.clone();
 
-            entity.observe(move |event: On<PointerPress>, mut sprites: Query<&mut Sprite>| {
-                if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                    sprite.image = press_image.clone();
-                }
-            });
-            entity.observe(move |event: On<PointerRelease>, mut sprites: Query<&mut Sprite>| {
-                if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                    sprite.image = default_image.clone();
-                }
-            });
+            entity.observe(
+                move |event: On<PointerPress>, mut sprites: Query<&mut Sprite>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        sprite.image = press_image.clone();
+                    }
+                },
+            );
+            entity.observe(
+                move |event: On<PointerRelease>, mut sprites: Query<&mut Sprite>| {
+                    if let Ok(mut sprite) = sprites.get_mut(event.entity) {
+                        sprite.image = default_image.clone();
+                    }
+                },
+            );
         }
 
         // optionally configure the sprite being draggable
         if self.draggable {
             entity.insert(DragState::default());
 
-            entity.observe(|event: On<PointerPress>, mut drag_states: Query<&mut DragState>| {
-                if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
-                    drag_state.dragging = true;
-                }
-            });
-            entity.observe(|event: On<PointerRelease>, mut drag_states: Query<&mut DragState>| {
-                if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
-                    drag_state.dragging = false;
-                }
-            });
+            entity.observe(
+                |event: On<PointerPress>, mut drag_states: Query<&mut DragState>| {
+                    if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
+                        drag_state.dragging = true;
+                    }
+                },
+            );
+            entity.observe(
+                |event: On<PointerRelease>, mut drag_states: Query<&mut DragState>| {
+                    if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
+                        drag_state.dragging = false;
+                    }
+                },
+            );
         }
-
     }
 }
 
@@ -99,7 +128,6 @@ impl ConfigurableSprite {
 pub struct DragState {
     dragging: bool,
 }
-
 
 // looks for entities with a drag state component and if dragging is enabled then
 // have it follow the cursor
@@ -128,4 +156,3 @@ pub fn update_dragged_sprites(
         }
     }
 }
-

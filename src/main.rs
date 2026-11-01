@@ -22,4 +22,3 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .draggable()
         .spawn(commands);
 }
-
