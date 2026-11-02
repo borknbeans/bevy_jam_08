@@ -91,7 +91,11 @@ impl ConfigurableSprite {
         let mut entity = commands.spawn((
             Transform::from_translation(spawn_position),
             Sprite {
-                image: self.visual_settings.default_img.clone(),
+                image: if let Some(press_img) = self.visual_settings.press_img.clone() && start_dragging {
+                    press_img
+                } else {
+                    self.visual_settings.default_img.clone()
+                },
                 ..default()
             },
             Pickable::default(),
@@ -180,14 +184,8 @@ impl ConfigurableSprite {
             // Update to press image
             entity.observe(
                 move |event: On<PointerPress>,
-                      mut sprites: Query<&mut Sprite>,
-                      drag_states: Query<&DragState>| {
+                      mut sprites: Query<&mut Sprite>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get(event.entity)
-                            && drag_state.dragging
-                        {
-                            return;
-                        }
                         sprite.image = press_img.clone();
                     }
                 },

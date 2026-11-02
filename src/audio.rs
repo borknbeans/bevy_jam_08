@@ -35,13 +35,18 @@ pub enum AudioCategory {
     UI,
 }
 
+impl AudioBundle {
+    pub fn new(source: Handle<AudioSource>, category: AudioCategory) -> Self {
+        Self {
+            source, 
+            category,
+        }
+    }
+}
+
 impl AudioFactory {
     pub fn play_sound(&mut self, bundle: AudioBundle) {
         self.requests.push(bundle);
-    }
-
-    pub fn play_sound_effect(&mut self, source: Handle<AudioSource>, category: AudioCategory) {
-        self.requests.push(AudioBundle { source, category });
     }
 }
 

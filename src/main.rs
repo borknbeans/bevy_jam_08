@@ -1,6 +1,8 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 
+use crate::audio::{AudioBundle, AudioCategory};
+
 mod audio;
 mod drag;
 mod physics;
@@ -48,13 +50,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             hover_img: Some(asset_server.load("art/frog-bag_hover.png")),
             ..default()
         })
+        .with_audio_settings(sprite::SpriteAudioSettings {
+            hover_enter_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
+            hover_exit_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
+            ..default()
+        })
         .spawn_at(&mut commands, Vec3::new(0.0, -247.0, 0.0), false);
     commands
         .entity(frog_bag)
         .insert(sprite_factory::SpriteFactory {
             sprite: sprite::ConfigurableSprite::default()
                 .with_visual_settings(sprite::SpriteVisualSettings {
-                    default_img: asset_server.load("art/potion.png"),
+                    default_img: asset_server.load("art/frog-leg.png"),
+                    press_img: Some(asset_server.load("art/frog-leg_press.png")),
                     ..default()
                 })
                 .draggable()
