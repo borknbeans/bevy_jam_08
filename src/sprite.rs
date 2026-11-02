@@ -1,21 +1,12 @@
 use bevy::{
-    asset::Handle,
-    ecs::{
-        component::Component,
-        entity::Entity,
-        observer::On,
-        system::{Commands, Query, ResMut},
-    },
-    image::Image,
-    math::Vec3,
-    picking::{
+    asset::Handle, camera::visibility::Visibility, ecs::{
+        component::Component, entity::Entity, observer::On, query::With, system::{Commands, Query, ResMut},
+    }, image::Image, math::Vec3, picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress},
-    },
-    sprite::Sprite,
-    transform::components::Transform,
-    utils::default,
+    }, sprite::Sprite, transform::components::Transform, utils::default,
 };
+use smart_default::SmartDefault;
 
 use crate::{
     audio::{AudioBundle, AudioFactory},
@@ -24,12 +15,14 @@ use crate::{
     sprite_factory::SpriteFactory,
 };
 
-#[derive(Clone, Default)]
+#[derive(Clone, SmartDefault)]
 pub struct ConfigurableSprite {
     pub visual_settings: SpriteVisualSettings,
     pub audio_settings: SpriteAudioSettings,
     pub draggable: bool,
     pub apply_physics: bool,
+    #[default(true)]
+    pub visible: bool,
 }
 
 #[derive(Clone, Component, Default)]
@@ -58,6 +51,7 @@ impl ConfigurableSprite {
             audio_settings: SpriteAudioSettings::default(),
             draggable: false,
             apply_physics: false,
+            visible: true,
         }
     }
 
@@ -82,6 +76,11 @@ impl ConfigurableSprite {
         self
     }
 
+    pub fn visible(mut self, v: bool) -> Self {
+        self.visible = v;
+        self
+    }
+
     pub fn spawn_at(
         self,
         commands: &mut Commands,
@@ -102,6 +101,14 @@ impl ConfigurableSprite {
             self.audio_settings.clone(),
             self.visual_settings.clone(),
         ));
+        
+        if !self.visible {
+            entity.insert(Visibility::Hidden);
+        }
+
+        if !start_dragging {
+            entity.insert(Pickable::default());
+        }
 
         // DRAGGING
         if self.draggable {
@@ -110,11 +117,22 @@ impl ConfigurableSprite {
                 last_world_position: spawn_position,
             });
 
+            if start_dragging {
+                let mut pickable = Pickable::default();
+                pickable.should_block_lower = false;
+                entity.insert(pickable);
+            }
+
             // On click, set update drag state and (if applicable) disable physics
             entity.observe(
                 |event: On<PointerPress>,
+                 mut pickables: Query<&mut Pickable>,
                  mut drag_states: Query<&mut DragState>,
                  mut physics_states: Query<&mut PhysicsState>| {
+                    if let Ok(mut pickable) = pickables.get_mut(event.entity) {
+                        pickable.should_block_lower = false;
+                    }
+
                     if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
                         drag_state.dragging = true;
                     }
@@ -218,5 +236,24 @@ impl ConfigurableSprite {
             );
         }
         entity.id()
+    }
+}
+
+
+#[derive(Component)]
+pub struct TrashCan;
+
+pub fn update_trash_can_visibility(
+    draggables: Query<&DragState>,
+    mut trash_cans: Query<&mut Visibility, With<TrashCan>>,
+) {
+    let something_is_dragging = draggables.iter().any(|state| state.dragging);
+
+    for mut visibility in &mut trash_cans {
+        *visibility = if something_is_dragging {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
     }
 }

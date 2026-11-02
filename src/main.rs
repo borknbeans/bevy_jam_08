@@ -1,4 +1,4 @@
-use bevy::asset::AssetMetaCheck;
+use bevy::{asset::AssetMetaCheck, picking::hover::Hovered};
 use bevy::prelude::*;
 
 use crate::audio::{AudioBundle, AudioCategory};
@@ -34,6 +34,7 @@ fn main() {
                 drag::update_dragged_sprites,
                 drag::stop_dragging_on_mouse_release,
                 physics::update_physics_sprites,
+                sprite::update_trash_can_visibility,
             ),
         )
         .insert_resource(audio::AudioFactory::default())
@@ -68,6 +69,22 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .draggable()
                 .apply_physics(),
         });
+
+    let trash_can = sprite::ConfigurableSprite::default()
+        .with_visual_settings(sprite::SpriteVisualSettings {
+            default_img: asset_server.load("art/trash-can.png"),
+            hover_img: Some(asset_server.load("art/trash-can_hover.png")),
+            ..default()
+        })
+        .with_audio_settings(sprite::SpriteAudioSettings {
+            hover_enter_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
+            hover_exit_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
+            ..default()
+        })
+        .visible(false)
+        .spawn_at(&mut commands, Vec3::new(600.0, -310.0, 0.5), false);
+    commands.entity(trash_can).insert((sprite::TrashCan, Hovered::default()));
+
 }
 
 

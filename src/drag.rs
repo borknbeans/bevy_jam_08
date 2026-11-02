@@ -1,22 +1,11 @@
 use bevy::{
-    camera::Camera,
-    ecs::{
-        component::Component,
-        query::With,
-        system::{Query, Res, ResMut},
-    },
-    input::{ButtonInput, mouse::MouseButton},
-    math::Vec3,
-    sprite::Sprite,
-    time::Time,
-    transform::components::{GlobalTransform, Transform},
-    window::{PrimaryWindow, Window},
+    camera::Camera, ecs::{
+        component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut},
+    }, input::{ButtonInput, mouse::MouseButton}, math::Vec3, picking::{Pickable, hover::Hovered}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window},
 };
 
 use crate::{
-    audio::AudioFactory,
-    physics::PhysicsState,
-    sprite::{SpriteAudioSettings, SpriteVisualSettings},
+    audio::AudioFactory, physics::PhysicsState, sprite::{SpriteAudioSettings, SpriteVisualSettings, TrashCan},
 };
 
 #[derive(Component, Default)]
@@ -59,25 +48,39 @@ pub fn update_dragged_sprites(
 }
 
 pub fn stop_dragging_on_mouse_release(
+    mut commands: Commands,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut audio_factory: ResMut<AudioFactory>,
     mut draggables: Query<(
+        Entity,
         &mut Sprite,
+        &mut Pickable,
         &mut DragState,
         Option<&mut PhysicsState>,
         Option<&SpriteAudioSettings>,
         Option<&SpriteVisualSettings>,
     )>,
+    trash_can: Query<(&TrashCan, &Hovered)>,
 ) {
     if !mouse_buttons.just_released(MouseButton::Left) {
         return;
     }
 
-    for (mut sprite, mut drag_state, physics_state, audio_settings, visual_settings) in
+
+    for (entity, mut sprite, mut pickable, mut drag_state, physics_state, audio_settings, visual_settings) in
         &mut draggables
     {
         if drag_state.dragging {
+            if let Ok((_, hovered)) = trash_can.single() {
+                if hovered.get() {
+                    commands.entity(entity).despawn();
+                    continue;
+                } 
+            }
+
             drag_state.dragging = false;
+            
+            pickable.should_block_lower = true;
 
             if let Some(mut physics_state) = physics_state {
                 physics_state.enable();
