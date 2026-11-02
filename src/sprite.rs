@@ -1,14 +1,27 @@
 use bevy::{
-    asset::Handle, ecs::{
-        component::Component, entity::Entity, observer::On, system::{Commands, EntityCommands, Query, ResMut},
-    }, image::Image, math::Vec3, picking::{
+    asset::Handle,
+    ecs::{
+        component::Component,
+        entity::Entity,
+        observer::On,
+        system::{Commands, Query, ResMut},
+    },
+    image::Image,
+    math::Vec3,
+    picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress},
-    }, sprite::Sprite, transform::components::Transform, utils::default,
+    },
+    sprite::Sprite,
+    transform::components::Transform,
+    utils::default,
 };
 
 use crate::{
-    audio::{AudioBundle, AudioFactory}, drag::DragState, physics::PhysicsState, sprite_factory::SpriteFactory,
+    audio::{AudioBundle, AudioFactory},
+    drag::DragState,
+    physics::PhysicsState,
+    sprite_factory::SpriteFactory,
 };
 
 #[derive(Clone, Default)]
@@ -69,7 +82,12 @@ impl ConfigurableSprite {
         self
     }
 
-    pub fn spawn_at(self, commands: &mut Commands, spawn_position: Vec3, start_dragging: bool) -> Entity {
+    pub fn spawn_at(
+        self,
+        commands: &mut Commands,
+        spawn_position: Vec3,
+        start_dragging: bool,
+    ) -> Entity {
         let mut entity = commands.spawn((
             Transform::from_translation(spawn_position),
             Sprite {
@@ -91,8 +109,8 @@ impl ConfigurableSprite {
             // On click, set update drag state and (if applicable) disable physics
             entity.observe(
                 |event: On<PointerPress>,
-                mut drag_states: Query<&mut DragState>,
-                mut physics_states: Query<&mut PhysicsState>| {
+                 mut drag_states: Query<&mut DragState>,
+                 mut physics_states: Query<&mut PhysicsState>| {
                     if let Ok(mut drag_state) = drag_states.get_mut(event.entity) {
                         drag_state.dragging = true;
                     }
@@ -113,8 +131,8 @@ impl ConfigurableSprite {
         // FACTORY
         entity.observe(
             |event: On<PointerPress>,
-            factories: Query<(&SpriteFactory, &Transform)>,
-            mut commands: Commands| {
+             factories: Query<(&SpriteFactory, &Transform)>,
+             mut commands: Commands| {
                 if let Ok((factory, transform)) = factories.get(event.entity) {
                     factory.spawn(&mut commands, transform.translation);
                 }
@@ -124,60 +142,65 @@ impl ConfigurableSprite {
         // VISUAL
         if let Some(hover_img) = self.visual_settings.hover_img.clone() {
             let default_img = self.visual_settings.default_img.clone();
-            
+
             // Update to hover image
             entity.observe(
                 move |event: On<PointerOver>,
-                mut sprites: Query<&mut Sprite>,
-                drag_states: Query<&DragState>| {
+                      mut sprites: Query<&mut Sprite>,
+                      drag_states: Query<&DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get(event.entity) && drag_state.dragging {
+                        if let Ok(drag_state) = drag_states.get(event.entity)
+                            && drag_state.dragging
+                        {
                             return;
                         }
                         sprite.image = hover_img.clone();
                     }
-                } 
+                },
             );
 
             // Update back to default image
             entity.observe(
                 move |event: On<PointerOut>,
-                mut sprites: Query<&mut Sprite>,
-                drag_states: Query<&DragState>| {
+                      mut sprites: Query<&mut Sprite>,
+                      drag_states: Query<&DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get(event.entity) && drag_state.dragging {
+                        if let Ok(drag_state) = drag_states.get(event.entity)
+                            && drag_state.dragging
+                        {
                             return;
                         }
                         sprite.image = default_img.clone();
                     }
-                } 
+                },
             );
         }
-        
+
         if let Some(press_img) = self.visual_settings.press_img.clone() {
             // Update to press image
             entity.observe(
                 move |event: On<PointerPress>,
-                mut sprites: Query<&mut Sprite>,
-                drag_states: Query<&DragState>| {
+                      mut sprites: Query<&mut Sprite>,
+                      drag_states: Query<&DragState>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
-                        if let Ok(drag_state) = drag_states.get(event.entity) && drag_state.dragging {
+                        if let Ok(drag_state) = drag_states.get(event.entity)
+                            && drag_state.dragging
+                        {
                             return;
                         }
                         sprite.image = press_img.clone();
                     }
-                } 
+                },
             );
             // Updating back is handled in drag.rs when watching for mouse release
         }
-
 
         // AUDIO
         if let Some(hover_enter_sound) = self.audio_settings.hover_enter_sound.clone() {
             entity.observe(
                 move |_: On<PointerOver>, mut audio_factory: ResMut<AudioFactory>| {
                     audio_factory.play_sound(hover_enter_sound.clone());
-                }
+                },
             );
         }
 
@@ -185,7 +208,7 @@ impl ConfigurableSprite {
             entity.observe(
                 move |_: On<PointerOut>, mut audio_factory: ResMut<AudioFactory>| {
                     audio_factory.play_sound(hover_exit_sound.clone());
-                }
+                },
             );
         }
 
@@ -193,7 +216,7 @@ impl ConfigurableSprite {
             entity.observe(
                 move |_: On<PointerPress>, mut audio_factory: ResMut<AudioFactory>| {
                     audio_factory.play_sound(press_sound.clone());
-                }
+                },
             );
         }
         entity.id()

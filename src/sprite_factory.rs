@@ -1,4 +1,7 @@
-use bevy::{ecs::{component::Component, system::Commands }, math::Vec3} ;
+use bevy::{
+    ecs::{component::Component, system::Commands},
+    math::Vec3,
+};
 
 use crate::sprite::ConfigurableSprite;
 
@@ -12,9 +15,9 @@ impl SpriteFactory {
         let spawn_position = factory_position + Vec3::Z;
 
         self.sprite.clone().spawn_at(
-            commands, 
-            spawn_position, 
-            true // start dragging
+            commands,
+            spawn_position,
+            true, // start dragging
         );
     }
 }
