@@ -1,10 +1,22 @@
 use bevy::{
-    asset::Handle, camera::visibility::Visibility, ecs::{
-        component::Component, entity::Entity, observer::On, query::With, system::{Commands, Query, ResMut},
-    }, image::Image, math::Vec3, picking::{
+    asset::Handle,
+    camera::visibility::Visibility,
+    ecs::{
+        component::Component,
+        entity::Entity,
+        observer::On,
+        query::With,
+        system::{Commands, Query, ResMut},
+    },
+    image::Image,
+    math::Vec3,
+    picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress},
-    }, sprite::Sprite, transform::components::Transform, utils::default,
+    },
+    sprite::Sprite,
+    transform::components::Transform,
+    utils::default,
 };
 use smart_default::SmartDefault;
 
@@ -90,7 +102,9 @@ impl ConfigurableSprite {
         let mut entity = commands.spawn((
             Transform::from_translation(spawn_position),
             Sprite {
-                image: if let Some(press_img) = self.visual_settings.press_img.clone() && start_dragging {
+                image: if let Some(press_img) = self.visual_settings.press_img.clone()
+                    && start_dragging
+                {
                     press_img
                 } else {
                     self.visual_settings.default_img.clone()
@@ -101,7 +115,7 @@ impl ConfigurableSprite {
             self.audio_settings.clone(),
             self.visual_settings.clone(),
         ));
-        
+
         if !self.visible {
             entity.insert(Visibility::Hidden);
         }
@@ -201,8 +215,7 @@ impl ConfigurableSprite {
         if let Some(press_img) = self.visual_settings.press_img.clone() {
             // Update to press image
             entity.observe(
-                move |event: On<PointerPress>,
-                      mut sprites: Query<&mut Sprite>| {
+                move |event: On<PointerPress>, mut sprites: Query<&mut Sprite>| {
                     if let Ok(mut sprite) = sprites.get_mut(event.entity) {
                         sprite.image = press_img.clone();
                     }
@@ -238,7 +251,6 @@ impl ConfigurableSprite {
         entity.id()
     }
 }
-
 
 #[derive(Component)]
 pub struct TrashCan;

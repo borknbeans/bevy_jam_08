@@ -37,10 +37,7 @@ pub enum AudioCategory {
 
 impl AudioBundle {
     pub fn new(source: Handle<AudioSource>, category: AudioCategory) -> Self {
-        Self {
-            source, 
-            category,
-        }
+        Self { source, category }
     }
 }
 

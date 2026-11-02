@@ -1,5 +1,5 @@
-use bevy::{asset::AssetMetaCheck, picking::hover::Hovered};
 use bevy::prelude::*;
+use bevy::{asset::AssetMetaCheck, picking::hover::Hovered};
 
 use crate::audio::{AudioBundle, AudioCategory};
 
@@ -52,8 +52,14 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .with_audio_settings(sprite::SpriteAudioSettings {
-            hover_enter_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
-            hover_exit_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
+            hover_enter_sound: Some(AudioBundle::new(
+                asset_server.load("audio/bag-close.ogg"),
+                AudioCategory::SOUND_EFFECT,
+            )),
+            hover_exit_sound: Some(AudioBundle::new(
+                asset_server.load("audio/bag-close.ogg"),
+                AudioCategory::SOUND_EFFECT,
+            )),
             ..default()
         })
         .spawn_at(&mut commands, Vec3::new(0.0, -247.0, 0.0), false);
@@ -77,16 +83,22 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .with_audio_settings(sprite::SpriteAudioSettings {
-            hover_enter_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
-            hover_exit_sound: Some(AudioBundle::new(asset_server.load("audio/bag-close.ogg"), AudioCategory::SOUND_EFFECT)),
+            hover_enter_sound: Some(AudioBundle::new(
+                asset_server.load("audio/bag-close.ogg"),
+                AudioCategory::SOUND_EFFECT,
+            )),
+            hover_exit_sound: Some(AudioBundle::new(
+                asset_server.load("audio/bag-close.ogg"),
+                AudioCategory::SOUND_EFFECT,
+            )),
             ..default()
         })
         .visible(false)
         .spawn_at(&mut commands, Vec3::new(600.0, -310.0, 0.5), false);
-    commands.entity(trash_can).insert((sprite::TrashCan, Hovered::default()));
-
+    commands
+        .entity(trash_can)
+        .insert((sprite::TrashCan, Hovered::default()));
 }
-
 
 // TODO: a trash can to delete sprites are are dropped into it
 // TODO: a way to tag a sprite as an "ingredient"

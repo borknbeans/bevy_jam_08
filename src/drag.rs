@@ -1,11 +1,24 @@
 use bevy::{
-    camera::Camera, ecs::{
-        component::Component, entity::Entity, query::With, system::{Commands, Query, Res, ResMut},
-    }, input::{ButtonInput, mouse::MouseButton}, math::Vec3, picking::{Pickable, hover::Hovered}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform}, window::{PrimaryWindow, Window},
+    camera::Camera,
+    ecs::{
+        component::Component,
+        entity::Entity,
+        query::With,
+        system::{Commands, Query, Res, ResMut},
+    },
+    input::{ButtonInput, mouse::MouseButton},
+    math::Vec3,
+    picking::{Pickable, hover::Hovered},
+    sprite::Sprite,
+    time::Time,
+    transform::components::{GlobalTransform, Transform},
+    window::{PrimaryWindow, Window},
 };
 
 use crate::{
-    audio::AudioFactory, physics::PhysicsState, sprite::{SpriteAudioSettings, SpriteVisualSettings, TrashCan},
+    audio::AudioFactory,
+    physics::PhysicsState,
+    sprite::{SpriteAudioSettings, SpriteVisualSettings, TrashCan},
 };
 
 #[derive(Component, Default)]
@@ -66,20 +79,26 @@ pub fn stop_dragging_on_mouse_release(
         return;
     }
 
-
-    for (entity, mut sprite, mut pickable, mut drag_state, physics_state, audio_settings, visual_settings) in
-        &mut draggables
+    for (
+        entity,
+        mut sprite,
+        mut pickable,
+        mut drag_state,
+        physics_state,
+        audio_settings,
+        visual_settings,
+    ) in &mut draggables
     {
         if drag_state.dragging {
-            if let Ok((_, hovered)) = trash_can.single() {
-                if hovered.get() {
-                    commands.entity(entity).despawn();
-                    continue;
-                } 
+            if let Ok((_, hovered)) = trash_can.single()
+                && hovered.get()
+            {
+                commands.entity(entity).despawn();
+                continue;
             }
 
             drag_state.dragging = false;
-            
+
             pickable.should_block_lower = true;
 
             if let Some(mut physics_state) = physics_state {
