@@ -2,10 +2,12 @@ use bevy::prelude::*;
 use bevy::{asset::AssetMetaCheck, picking::hover::Hovered};
 
 use crate::audio::{AudioBundle, AudioCategory};
+use crate::registry::{ItemId, ItemRegistry};
 
 mod audio;
 mod drag;
 mod physics;
+mod registry;
 mod sprite;
 mod sprite_factory;
 
@@ -26,7 +28,12 @@ fn main() {
                     ..default()
                 }),
         )
-        .add_systems(Startup, setup)
+        .add_systems(Startup, 
+            (
+                setup,
+                registry::register_items,
+            )
+        )
         .add_systems(
             Update,
             (
@@ -38,10 +45,11 @@ fn main() {
             ),
         )
         .insert_resource(audio::AudioFactory::default())
+        .insert_resource(registry::ItemRegistry::default())
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>, registry: Res<ItemRegistry>) {
     commands.spawn(Camera2d);
 
     // Frog leg factory
@@ -62,18 +70,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             )),
             ..default()
         })
-        .spawn_at(&mut commands, Vec3::new(0.0, -247.0, 0.0), false);
+        .spawn_at(&mut commands, Vec3::new(360.0, 50.0, 0.0), false);
     commands
         .entity(frog_bag)
         .insert(sprite_factory::SpriteFactory {
-            sprite: sprite::ConfigurableSprite::default()
-                .with_visual_settings(sprite::SpriteVisualSettings {
-                    default_img: asset_server.load("art/frog-leg.png"),
-                    press_img: Some(asset_server.load("art/frog-leg_press.png")),
-                    ..default()
-                })
-                .draggable()
-                .apply_physics(),
+            sprite: registry.get(ItemId::FrogLeg).unwrap().clone(),
         });
 
     let trash_can = sprite::ConfigurableSprite::default()
@@ -98,9 +99,16 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .entity(trash_can)
         .insert((sprite::TrashCan, Hovered::default()));
+
+    let cauldron = sprite::ConfigurableSprite::default()
+        .with_visual_settings(sprite::SpriteVisualSettings { 
+            default_img: asset_server.load("art/cauldron.png"),
+            hover_img: Some(asset_server.load("art/cauldron_hover.png")),
+            ..default()
+        })
+        .spawn_at(&mut commands, Vec3::new(0.0, -235.0, 0.0), false);
 }
 
-// TODO: a trash can to delete sprites are are dropped into it
 // TODO: a way to tag a sprite as an "ingredient"
 // TODO: A "cauldron" that allows you to place ingredients into it and "create" a potion
 // TODO: the cauldron should read from available recipes and transform the inputs into an output
