@@ -9,10 +9,20 @@ mod sprite_factory;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(AssetPlugin {
-            meta_check: AssetMetaCheck::Never,
-            ..default()
-        }))
+        .add_plugins(DefaultPlugins
+            .set(AssetPlugin {
+                meta_check: AssetMetaCheck::Never,
+                ..default()
+            })
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Bevy Jam 08".into(),
+                    resolution: (1280, 720).into(),
+                    ..default()
+                }),
+                ..default()
+            }),
+        )
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -31,21 +41,22 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
    
     // Frog leg factory
-    let frog_leg_factory = sprite_factory::SpriteFactory {
-        sprite: sprite::ConfigurableSprite::default()
-            .with_visual_settings(sprite::SpriteVisualSettings {
-                default_img: asset_server.load("art/frog-leg.png"),
-                ..default()
-            })
-            .draggable()
-            .apply_physics(),
-    };
-    sprite::ConfigurableSprite::default()
+    let frog_bag = sprite::ConfigurableSprite::default()
         .with_visual_settings(sprite::SpriteVisualSettings {
             default_img: asset_server.load("art/frog-bag.png"),
             hover_img: Some(asset_server.load("art/frog-bag_hover.png")),
             ..default()
-        });
+        })
+        .spawn_at(&mut commands, Vec3::new(0.0, -247.0, 0.0), false);
+    commands.entity(frog_bag).insert(sprite_factory::SpriteFactory {
+        sprite: sprite::ConfigurableSprite::default()
+            .with_visual_settings(sprite::SpriteVisualSettings {
+                default_img: asset_server.load("art/potion.png"),
+                ..default()
+            })
+            .draggable()
+            .apply_physics(),
+    });
     
     // sprite::ConfigurableSprite::new(asset_server.load("art/potion.png"))
     //     .with_hover_image(asset_server.load("art/potion_hover.png"))

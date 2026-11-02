@@ -35,7 +35,7 @@ pub fn update_dragged_sprites(
             };
 
             if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
-                transform.translation = world_pos.extend(0.0);
+                transform.translation = world_pos.extend(transform.translation.z);
                 physics_state.set_velocity(
                     (transform.translation - drag_state.last_world_position) / time.delta_secs(),
                 );

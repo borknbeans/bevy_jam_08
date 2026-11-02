@@ -1,14 +1,14 @@
 use bevy::{
     asset::Handle, ecs::{
-        component::Component, observer::On, system::{Commands, EntityCommands, Query, ResMut},
-    }, image::Image, picking::{
+        component::Component, entity::Entity, observer::On, system::{Commands, EntityCommands, Query, ResMut},
+    }, image::Image, math::Vec3, picking::{
         Pickable,
         events::{PointerOut, PointerOver, PointerPress},
-    }, sprite::Sprite, utils::default,
+    }, sprite::Sprite, transform::components::Transform, utils::default,
 };
 
 use crate::{
-    audio::{AudioBundle, AudioFactory}, drag::DragState, physics::PhysicsState,
+    audio::{AudioBundle, AudioFactory}, drag::DragState, physics::PhysicsState, sprite_factory::SpriteFactory,
 };
 
 #[derive(Clone, Default)]
@@ -69,8 +69,9 @@ impl ConfigurableSprite {
         self
     }
 
-    pub fn spawn(self, mut commands: Commands) {
+    pub fn spawn_at(self, commands: &mut Commands, spawn_position: Vec3, start_dragging: bool) -> Entity {
         let mut entity = commands.spawn((
+            Transform::from_translation(spawn_position),
             Sprite {
                 image: self.visual_settings.default_img.clone(),
                 ..default()
@@ -80,8 +81,12 @@ impl ConfigurableSprite {
             self.visual_settings.clone(),
         ));
 
+        // DRAGGING
         if self.draggable {
-            entity.insert(DragState::default());
+            entity.insert(DragState {
+                dragging: start_dragging,
+                last_world_position: spawn_position,
+            });
 
             // On click, set update drag state and (if applicable) disable physics
             entity.observe(
@@ -99,6 +104,22 @@ impl ConfigurableSprite {
                 },
             );
         }
+
+        // PHYSICS
+        if self.apply_physics {
+            entity.insert(PhysicsState::default());
+        }
+
+        // FACTORY
+        entity.observe(
+            |event: On<PointerPress>,
+            factories: Query<(&SpriteFactory, &Transform)>,
+            mut commands: Commands| {
+                if let Ok((factory, transform)) = factories.get(event.entity) {
+                    factory.spawn(&mut commands, transform.translation);
+                }
+            },
+        );
 
         // VISUAL
         if let Some(hover_img) = self.visual_settings.hover_img.clone() {
@@ -175,5 +196,6 @@ impl ConfigurableSprite {
                 }
             );
         }
+        entity.id()
     }
 }

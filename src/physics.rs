@@ -1,36 +1,27 @@
 use bevy::{
-    asset::{Assets, Handle}, audio::{AudioPlayer, AudioSource, PlaybackSettings}, camera::Camera, ecs::{
-        component::Component, system::{Commands, Query, Res, ResMut},
+    asset::Assets, camera::Camera, ecs::{
+        component::Component, system::{Query, Res, ResMut},
     }, image::Image, math::{Vec2, Vec3, ops::abs}, sprite::Sprite, time::Time, transform::components::{GlobalTransform, Transform},
 };
-use rand::RngExt;
+use smart_default::SmartDefault;
 
 use crate::{audio::AudioFactory, sprite::SpriteAudioSettings};
 
 const BOUNCE_AUDIO_THRESHOLD: f32 = 8.0;
 
-#[derive(Component)]
+#[derive(Component, SmartDefault)]
 pub struct PhysicsState {
     enabled: bool,
+    #[default(2000.0)]
     gravity: f32,
     velocity: Vec2,
+    #[default(0.15)]
     bounce_factor: f32,
+    #[default(0.3)]
     roughness_factor: f32,
-    bounce_sound_fx: Option<Handle<AudioSource>>,
 }
 
 impl PhysicsState {
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
-            gravity: 2000.0,
-            velocity: Vec2::new(0.0, 0.0),
-            bounce_factor: 0.15,
-            roughness_factor: 0.35,
-            bounce_sound_fx: None,
-        }
-    }
-
     pub fn enable(&mut self) {
         self.enabled = true;
     }
@@ -47,10 +38,6 @@ impl PhysicsState {
     pub fn set_velocity(&mut self, v: Vec3) {
         self.velocity.x = v.x;
         self.velocity.y = v.y;
-    }
-
-    pub fn set_bounce_fx(&mut self, sound_fx: Handle<AudioSource>) {
-        self.bounce_sound_fx = Some(sound_fx);
     }
 }
 
