@@ -16,7 +16,10 @@ use bevy::{
 };
 
 use crate::{
-    audio::AudioFactory, cauldron::Cauldron, physics::PhysicsState, sprite::{ItemInfo, SpriteAudioSettings, SpriteVisualSettings, TrashCan},
+    audio::AudioFactory,
+    cauldron::Cauldron,
+    physics::PhysicsState,
+    sprite::{ItemInfo, SpriteAudioSettings, SpriteVisualSettings, TrashCan},
 };
 
 #[derive(Component, Default)]
@@ -98,13 +101,14 @@ pub fn stop_dragging_on_mouse_release(
                 continue;
             }
 
-            if let Ok((mut cauldron, hovered)) = cauldrons.single_mut() && hovered.get() {
-                if let Some(item) = item_info {
-                    cauldron.ingredients.push(item.id.clone());
-                    commands.entity(entity).despawn();
-                    println!("{:?}", cauldron.ingredients.len());
-                    continue;
-                }
+            if let Ok((mut cauldron, hovered)) = cauldrons.single_mut()
+                && hovered.get()
+                && let Some(item) = item_info
+            {
+                cauldron.ingredients.push(item.id);
+                commands.entity(entity).despawn();
+                println!("{:?}", cauldron.ingredients.len());
+                continue;
             }
 
             drag_state.dragging = false;

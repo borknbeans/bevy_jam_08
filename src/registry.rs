@@ -1,4 +1,12 @@
-use bevy::{asset::AssetServer, ecs::{resource::Resource, system::{Res, ResMut}}, platform::collections::HashMap, utils::default};
+use bevy::{
+    asset::AssetServer,
+    ecs::{
+        resource::Resource,
+        system::{Res, ResMut},
+    },
+    platform::collections::HashMap,
+    utils::default,
+};
 
 use crate::sprite::{ConfigurableSprite, SpriteVisualSettings};
 
@@ -22,10 +30,7 @@ impl ItemRegistry {
     }
 }
 
-pub fn register_items(
-    mut registry: ResMut<ItemRegistry>,
-    asset_server: Res<AssetServer>,
-) {
+pub fn register_items(mut registry: ResMut<ItemRegistry>, asset_server: Res<AssetServer>) {
     registry.register(
         ItemId::FrogLeg,
         ConfigurableSprite::default()

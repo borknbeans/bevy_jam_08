@@ -29,12 +29,7 @@ fn main() {
                     ..default()
                 }),
         )
-        .add_systems(Startup, 
-            (
-                setup,
-                registry::register_items,
-            )
-        )
+        .add_systems(Startup, (setup, registry::register_items))
         .add_systems(
             Update,
             (
@@ -102,13 +97,15 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, registry: Res<I
         .insert((sprite::TrashCan, Hovered::default()));
 
     let cauldron = sprite::ConfigurableSprite::default()
-        .with_visual_settings(sprite::SpriteVisualSettings { 
+        .with_visual_settings(sprite::SpriteVisualSettings {
             default_img: asset_server.load("art/cauldron.png"),
             hover_img: Some(asset_server.load("art/cauldron_hover.png")),
             ..default()
         })
         .spawn_at(&mut commands, Vec3::new(0.0, -235.0, 0.0), false);
-    commands.entity(cauldron).insert((cauldron::Cauldron::default(), Hovered::default()));
+    commands
+        .entity(cauldron)
+        .insert((cauldron::Cauldron::default(), Hovered::default()));
 }
 
 // TODO: a way to tag a sprite as an "ingredient"

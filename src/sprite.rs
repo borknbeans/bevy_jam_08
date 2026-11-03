@@ -21,7 +21,11 @@ use bevy::{
 use smart_default::SmartDefault;
 
 use crate::{
-    audio::{AudioBundle, AudioFactory}, drag::DragState, physics::PhysicsState, registry::ItemId, sprite_factory::SpriteFactory,
+    audio::{AudioBundle, AudioFactory},
+    drag::DragState,
+    physics::PhysicsState,
+    registry::ItemId,
+    sprite_factory::SpriteFactory,
 };
 
 #[derive(Clone, SmartDefault)]
@@ -126,7 +130,7 @@ impl ConfigurableSprite {
         ));
 
         if let Some(id) = self.id {
-            entity.insert(ItemInfo {id: id});
+            entity.insert(ItemInfo { id });
         }
 
         if !self.visible {
