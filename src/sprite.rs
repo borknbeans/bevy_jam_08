@@ -21,14 +21,12 @@ use bevy::{
 use smart_default::SmartDefault;
 
 use crate::{
-    audio::{AudioBundle, AudioFactory},
-    drag::DragState,
-    physics::PhysicsState,
-    sprite_factory::SpriteFactory,
+    audio::{AudioBundle, AudioFactory}, drag::DragState, physics::PhysicsState, registry::ItemId, sprite_factory::SpriteFactory,
 };
 
 #[derive(Clone, SmartDefault)]
 pub struct ConfigurableSprite {
+    pub id: Option<ItemId>,
     pub visual_settings: SpriteVisualSettings,
     pub audio_settings: SpriteAudioSettings,
     pub draggable: bool,
@@ -53,9 +51,15 @@ pub struct SpriteAudioSettings {
     pub bounce_sound: Option<AudioBundle>,
 }
 
+#[derive(Component)]
+pub struct ItemInfo {
+    pub id: ItemId,
+}
+
 impl ConfigurableSprite {
     pub fn new(default_img: Handle<Image>) -> Self {
         Self {
+            id: None,
             visual_settings: SpriteVisualSettings {
                 default_img,
                 ..default()
@@ -93,6 +97,11 @@ impl ConfigurableSprite {
         self
     }
 
+    pub fn with_id(mut self, id: ItemId) -> Self {
+        self.id = Some(id);
+        self
+    }
+
     pub fn spawn_at(
         self,
         commands: &mut Commands,
@@ -115,6 +124,10 @@ impl ConfigurableSprite {
             self.audio_settings.clone(),
             self.visual_settings.clone(),
         ));
+
+        if let Some(id) = self.id {
+            entity.insert(ItemInfo {id: id});
+        }
 
         if !self.visible {
             entity.insert(Visibility::Hidden);

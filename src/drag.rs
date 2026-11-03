@@ -16,9 +16,7 @@ use bevy::{
 };
 
 use crate::{
-    audio::AudioFactory,
-    physics::PhysicsState,
-    sprite::{SpriteAudioSettings, SpriteVisualSettings, TrashCan},
+    audio::AudioFactory, cauldron::Cauldron, physics::PhysicsState, sprite::{ItemInfo, SpriteAudioSettings, SpriteVisualSettings, TrashCan},
 };
 
 #[derive(Component, Default)]
@@ -69,11 +67,13 @@ pub fn stop_dragging_on_mouse_release(
         &mut Sprite,
         &mut Pickable,
         &mut DragState,
+        Option<&ItemInfo>,
         Option<&mut PhysicsState>,
         Option<&SpriteAudioSettings>,
         Option<&SpriteVisualSettings>,
     )>,
     trash_can: Query<(&TrashCan, &Hovered)>,
+    mut cauldrons: Query<(&mut Cauldron, &Hovered)>,
 ) {
     if !mouse_buttons.just_released(MouseButton::Left) {
         return;
@@ -84,6 +84,7 @@ pub fn stop_dragging_on_mouse_release(
         mut sprite,
         mut pickable,
         mut drag_state,
+        item_info,
         physics_state,
         audio_settings,
         visual_settings,
@@ -95,6 +96,15 @@ pub fn stop_dragging_on_mouse_release(
             {
                 commands.entity(entity).despawn();
                 continue;
+            }
+
+            if let Ok((mut cauldron, hovered)) = cauldrons.single_mut() && hovered.get() {
+                if let Some(item) = item_info {
+                    cauldron.ingredients.push(item.id.clone());
+                    commands.entity(entity).despawn();
+                    println!("{:?}", cauldron.ingredients.len());
+                    continue;
+                }
             }
 
             drag_state.dragging = false;

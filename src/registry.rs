@@ -29,6 +29,7 @@ pub fn register_items(
     registry.register(
         ItemId::FrogLeg,
         ConfigurableSprite::default()
+            .with_id(ItemId::FrogLeg)
             .with_visual_settings(SpriteVisualSettings {
                 default_img: asset_server.load("art/frog-leg.png"),
                 press_img: Some(asset_server.load("art/frog-leg_press.png")),

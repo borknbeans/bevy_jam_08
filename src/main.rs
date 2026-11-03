@@ -5,6 +5,7 @@ use crate::audio::{AudioBundle, AudioCategory};
 use crate::registry::{ItemId, ItemRegistry};
 
 mod audio;
+mod cauldron;
 mod drag;
 mod physics;
 mod registry;
@@ -107,6 +108,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, registry: Res<I
             ..default()
         })
         .spawn_at(&mut commands, Vec3::new(0.0, -235.0, 0.0), false);
+    commands.entity(cauldron).insert((cauldron::Cauldron::default(), Hovered::default()));
 }
 
 // TODO: a way to tag a sprite as an "ingredient"
